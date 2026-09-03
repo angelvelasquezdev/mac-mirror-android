@@ -1,0 +1,104 @@
+<resources>
+    <string name="app_name">MacMirror</string>
+
+    <!-- Tabs -->
+    <string name="tab_connection">Conexión</string>
+    <string name="tab_apps">Apps</string>
+    <string name="tab_settings">Ajustes</string>
+
+    <!-- Main Screen -->
+    <string name="app_subtitle">Puente de notificaciones en tiempo real para macOS</string>
+    <string name="permission_title">Permiso de Notificaciones Requerido</string>
+    <string name="permission_tag">Privacidad Garantizada</string>
+    <string name="permission_desc">MacMirror requiere acceso al Listener de Notificaciones para replicar tus alertas en el Mac. Tus datos permanecen exclusivamente en tu red Wi-Fi local y nunca se envían a internet.</string>
+    <string name="permission_button">Activar en Ajustes del Sistema</string>
+
+    <string name="active_connection_title">Conexión Activa</string>
+    <string name="active_connection_caption">Tus notificaciones de Android se transmiten de forma cifrada a tu Mac.</string>
+    <string name="status_connected_syncing">Conectado y Sincronizando</string>
+    <string name="status_standby_reconnecting">En Espera / Reconectando</string>
+    <string name="status_low_latency_active">Canal de baja latencia activo</string>
+    <string name="status_verifying_server">Verificando presencia del servidor…</string>
+    <string name="paired_mac_title">Mac Vinculado</string>
+    <string name="paired_mac_subtitle">Equipo macOS autorizado</string>
+    <string name="server_address_title">Dirección del Servidor</string>
+    <string name="server_address_auto">Automático por Bonjour</string>
+    <string name="btn_send_test_notification">Enviar Notificación de Prueba</string>
+    <string name="btn_unpair_mac">Desvincular este Mac</string>
+
+    <string name="searching_mac_title">Buscando tu Mac…</string>
+    <string name="searching_mac_desc">Abre MacMirror en tu Mac. Asegúrate de que ambos dispositivos estén conectados a la misma red Wi-Fi.</string>
+    <string name="btn_retry">Reintentar</string>
+    <string name="btn_connect_by_ip">Conectar por IP</string>
+
+    <string name="mac_found_tag">Mac Encontrado en la Red</string>
+    <string name="enter_pin_title">Ingresa el Código PIN</string>
+    <string name="enter_pin_desc">Mira el código de 6 dígitos en la barra de menú de tu Mac.</string>
+    <string name="establishing_secure_channel">Estableciendo canal seguro…</string>
+    <string name="btn_pair_with_mac">Vincular con Mac</string>
+    <string name="btn_pairing">Vinculando…</string>
+    <string name="btn_switch_to_manual_ip">Cambiar a IP manual</string>
+
+    <string name="manual_ip_dialog_title">Conexión Manual por IP</string>
+    <string name="manual_ip_dialog_desc">Introduce la dirección IP de tu Mac (visible en la parte superior de la ventana de MacMirror en macOS):</string>
+    <string name="manual_ip_placeholder">Ej. 192.168.1.50</string>
+    <string name="btn_connect">Conectar</string>
+    <string name="btn_cancel">Cancelar</string>
+
+    <string name="err_no_mac_discovered">No se encontró ningún Mac en la red local.</string>
+    <string name="err_pin_must_be_6_digits">El PIN debe tener 6 dígitos.</string>
+    <string name="err_pairing_failed">Falló la confirmación del emparejamiento. Verifica el PIN.</string>
+    <string name="err_connection_error">Error de conexión: %s</string>
+
+    <!-- Apps Screen -->
+    <string name="apps_screen_title">Apps</string>
+    <string name="apps_synced_format">%1$d de %2$d aplicaciones sincronizadas</string>
+    <string name="apps_search_placeholder">Buscar aplicación…</string>
+    <string name="apps_section_title">FILTROS INDIVIDUALES</string>
+    <string name="btn_select_all">Todas</string>
+    <string name="btn_select_none">Ninguna</string>
+    <string name="apps_no_results_title">Sin resultados</string>
+    <string name="apps_no_results_desc">No se encontraron aplicaciones con \"%s\"</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_screen_title">Ajustes</string>
+    <string name="settings_screen_subtitle">Preferencias del sistema y seguridad.</string>
+    <string name="section_appearance_title">Apariencia</string>
+    <string name="section_appearance_caption">Elige si deseas seguir la apariencia de tu dispositivo Android o forzar un estilo específico.</string>
+    <string name="theme_system">Sistema</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Oscuro</string>
+
+    <string name="section_network_title">Rendimiento y Red</string>
+    <string name="section_network_caption">El modo de baja latencia utiliza WebSockets persistentes para una entrega instantánea con mínimo retraso.</string>
+    <string name="row_low_latency_title">Baja Latencia (WebSockets)</string>
+    <string name="row_low_latency_active">Sincronización en tiempo real activa</string>
+    <string name="row_low_latency_inactive">Modo de ahorro de batería HTTP</string>
+
+    <string name="section_privacy_title">Privacidad y Seguridad</string>
+    <string name="section_privacy_caption">MacMirror está diseñado con privacidad de confianza cero (Zero Trust) en tu red local.</string>
+    <string name="row_e2ee_title">Cifrado Extremo a Extremo</string>
+    <string name="row_e2ee_subtitle">AES-256-GCM con intercambio efímero ECDH</string>
+    <string name="row_keystore_title">Android KeyStore</string>
+    <string name="row_keystore_subtitle">Las claves de sesión se custodian en el enclave seguro</string>
+
+    <string name="section_about_title">Acerca de</string>
+    <string name="section_about_caption">MacMirror vincula tu teléfono Android con tu Mac con elegancia y simplicidad.</string>
+    <string name="row_about_app">MacMirror para Android</string>
+    <string name="row_about_version">Versión 1.0 (Build 1)</string>
+    <string name="row_open_onboarding_title">Ver guía de bienvenida</string>
+    <string name="row_open_onboarding_subtitle">Consulta la introducción y el tutorial de permisos</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">Saltar</string>
+    <string name="onboarding_next">Siguiente</string>
+    <string name="onboarding_get_started">Comenzar</string>
+    <string name="onboarding_step1_title">Bienvenido a MacMirror</string>
+    <string name="onboarding_step1_desc">Sincroniza tus notificaciones de Android directamente en la barra de menú de tu Mac en tiempo real.</string>
+    <string name="onboarding_step2_title">100% Privado y Seguro</string>
+    <string name="onboarding_step2_desc">Tus datos nunca viajan por internet. Las alertas están cifradas con AES-256-GCM directamente en tu red Wi-Fi local.</string>
+    <string name="onboarding_step3_title">Permiso de Notificaciones</string>
+    <string name="onboarding_step3_desc">Otorga acceso al Listener de Notificaciones para que MacMirror pueda reflejar tus alertas de forma transparente.</string>
+    <string name="onboarding_step3_grant">Otorgar Permiso</string>
+    <string name="onboarding_step3_granted">Permiso Otorgado</string>
+</resources>
