@@ -76,6 +76,7 @@ workflows:
         - macmirror_signing_credentials
       groups:
         - google_play_credentials
+        - github_credentials
       vars:
         PACKAGE_NAME: "com.angelsoft.macmirror"
     cache:
@@ -96,7 +97,7 @@ workflows:
           cat <<EOF > "$CM_BUILD_DIR/local.properties"
           sdk.dir=$ANDROID_SDK_ROOT
           EOF
-      - name: Build AAB with Gradle
+      - name: Build AAB and APK with Gradle
         script: |
           set -e
           set -x
@@ -112,8 +113,38 @@ workflows:
           ./gradlew :app:bundleRelease \
             -PversionName="$BETA_VERSION_NAME" \
             -PversionCode=$UPDATED_BUILD_NUMBER
+
+          ./gradlew :app:assembleRelease \
+            -PversionName="$BETA_VERSION_NAME" \
+            -PversionCode=$UPDATED_BUILD_NUMBER
+      - name: Publish to GitHub Releases
+        script: |
+          set -e
+          set -x
+          
+          if [ -z "$CM_TAG" ]; then
+            echo "Not a tag build, skipping GitHub Release"
+            exit 0
+          fi
+          
+          export GH_TOKEN="$GITHUB_TOKEN"
+          
+          if gh release view "$CM_TAG" >/dev/null 2>&1; then
+            gh release upload "$CM_TAG" \
+              app/build/outputs/bundle/release/*.aab \
+              app/build/outputs/apk/release/*.apk \
+              --clobber
+          else
+            gh release create "$CM_TAG" \
+              --title "MacMirror Android $CM_TAG" \
+              --generate-notes \
+              --prerelease \
+              app/build/outputs/bundle/release/*.aab \
+              app/build/outputs/apk/release/*.apk
+          fi
     artifacts:
       - app/build/outputs/bundle/release/*.aab
+      - app/build/outputs/apk/release/*.apk
     publishing:
       google_play:
         credentials: $GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS
@@ -134,6 +165,7 @@ workflows:
         - macmirror_signing_credentials
       groups:
         - google_play_credentials
+        - github_credentials
       vars:
         PACKAGE_NAME: "com.angelsoft.macmirror"
     cache:
@@ -156,7 +188,7 @@ workflows:
           cat <<EOF > "$CM_BUILD_DIR/local.properties"
           sdk.dir=$ANDROID_SDK_ROOT
           EOF
-      - name: Build AAB with Gradle
+      - name: Build AAB and APK with Gradle
         script: |
           set -e
           set -x
@@ -172,8 +204,37 @@ workflows:
           ./gradlew :app:bundleRelease \
             -PversionName="$TAG_VERSION_NAME" \
             -PversionCode=$UPDATED_BUILD_NUMBER
+
+          ./gradlew :app:assembleRelease \
+            -PversionName="$TAG_VERSION_NAME" \
+            -PversionCode=$UPDATED_BUILD_NUMBER
+      - name: Publish to GitHub Releases
+        script: |
+          set -e
+          set -x
+          
+          if [ -z "$CM_TAG" ]; then
+            echo "Not a tag build, skipping GitHub Release"
+            exit 0
+          fi
+          
+          export GH_TOKEN="$GITHUB_TOKEN"
+          
+          if gh release view "$CM_TAG" >/dev/null 2>&1; then
+            gh release upload "$CM_TAG" \
+              app/build/outputs/bundle/release/*.aab \
+              app/build/outputs/apk/release/*.apk \
+              --clobber
+          else
+            gh release create "$CM_TAG" \
+              --title "MacMirror Android $CM_TAG" \
+              --generate-notes \
+              app/build/outputs/bundle/release/*.aab \
+              app/build/outputs/apk/release/*.apk
+          fi
     artifacts:
       - app/build/outputs/bundle/release/*.aab
+      - app/build/outputs/apk/release/*.apk
     publishing:
       google_play:
         credentials: $GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS
