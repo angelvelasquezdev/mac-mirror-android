@@ -11,12 +11,15 @@ android {
         }
     }
 
+    val vCode = project.findProperty("versionCode")?.toString()?.toIntOrNull() ?: 1
+    val vName = project.findProperty("versionName")?.toString() ?: "1.0"
+
     defaultConfig {
         applicationId = "com.angelsoft.macmirror"
         minSdk = 28
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = vCode
+        versionName = vName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

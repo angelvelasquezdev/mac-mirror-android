@@ -1,0 +1,186 @@
+workflows:
+  android-internal-release:
+    name: Android Internal Release
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      android_signing:
+        - macmirror_signing_credentials
+      groups:
+        - google_play_credentials
+      vars:
+        PACKAGE_NAME: "com.angelsoft.macmirror"
+    cache:
+      cache_paths:
+        - ~/.gradle/caches
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'develop'
+          include: true
+          source: true
+    when:
+      changeset:
+        includes:
+          - 'app/'
+          - 'gradle/'
+          - 'build.gradle.kts'
+          - 'settings.gradle.kts'
+          - 'gradle.properties'
+          - 'gradlew'
+          - 'gradlew.bat'
+    scripts:
+      - name: Set up local.properties
+        script: |
+          set -e
+          set -x
+          
+          cat <<EOF > "$CM_BUILD_DIR/local.properties"
+          sdk.dir=$ANDROID_SDK_ROOT
+          EOF
+      - name: Build AAB with Gradle
+        script: |
+          set -e
+          set -x
+          
+          LATEST_GOOGLE_PLAY_BUILD_NUMBER=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME" 2>/dev/null || echo "0")
+          if [ -z "$LATEST_GOOGLE_PLAY_BUILD_NUMBER" ] || [ "$LATEST_GOOGLE_PLAY_BUILD_NUMBER" -eq "0" ]; then
+            UPDATED_BUILD_NUMBER=$BUILD_NUMBER
+          else
+            UPDATED_BUILD_NUMBER=$(($LATEST_GOOGLE_PLAY_BUILD_NUMBER + 1))
+          fi
+          
+          ./gradlew :app:bundleRelease \
+            -PversionName="build.$UPDATED_BUILD_NUMBER" \
+            -PversionCode=$UPDATED_BUILD_NUMBER
+    artifacts:
+      - app/build/outputs/bundle/release/*.aab
+    publishing:
+      google_play:
+        credentials: $GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
+      email:
+        recipients:
+          - angelvelasquezdev@gmail.com
+        notify:
+          success: true
+          failure: true
+
+  android-beta-release:
+    name: Android Beta Release
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      android_signing:
+        - macmirror_signing_credentials
+      groups:
+        - google_play_credentials
+      vars:
+        PACKAGE_NAME: "com.angelsoft.macmirror"
+    cache:
+      cache_paths:
+        - ~/.gradle/caches
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: 'v*-beta*'
+          include: true
+    scripts:
+      - name: Set up local.properties
+        script: |
+          set -e
+          set -x
+          
+          cat <<EOF > "$CM_BUILD_DIR/local.properties"
+          sdk.dir=$ANDROID_SDK_ROOT
+          EOF
+      - name: Build AAB with Gradle
+        script: |
+          set -e
+          set -x
+          
+          LATEST_GOOGLE_PLAY_BUILD_NUMBER=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME" 2>/dev/null || echo "0")
+          if [ -z "$LATEST_GOOGLE_PLAY_BUILD_NUMBER" ] || [ "$LATEST_GOOGLE_PLAY_BUILD_NUMBER" -eq "0" ]; then
+            UPDATED_BUILD_NUMBER=$BUILD_NUMBER
+          else
+            UPDATED_BUILD_NUMBER=$(($LATEST_GOOGLE_PLAY_BUILD_NUMBER + 1))
+          fi
+          
+          BETA_VERSION_NAME=${CM_TAG#v}
+          ./gradlew :app:bundleRelease \
+            -PversionName="$BETA_VERSION_NAME" \
+            -PversionCode=$UPDATED_BUILD_NUMBER
+    artifacts:
+      - app/build/outputs/bundle/release/*.aab
+    publishing:
+      google_play:
+        credentials: $GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS
+        track: beta
+      email:
+        recipients:
+          - angelvelasquezdev@gmail.com
+        notify:
+          success: true
+          failure: true
+
+  android-production-release:
+    name: Android Production Release
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      android_signing:
+        - macmirror_signing_credentials
+      groups:
+        - google_play_credentials
+      vars:
+        PACKAGE_NAME: "com.angelsoft.macmirror"
+    cache:
+      cache_paths:
+        - ~/.gradle/caches
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: 'v*-beta*'
+          include: false
+        - pattern: 'v*'
+          include: true
+    scripts:
+      - name: Set up local.properties
+        script: |
+          set -e
+          set -x
+          
+          cat <<EOF > "$CM_BUILD_DIR/local.properties"
+          sdk.dir=$ANDROID_SDK_ROOT
+          EOF
+      - name: Build AAB with Gradle
+        script: |
+          set -e
+          set -x
+          
+          LATEST_GOOGLE_PLAY_BUILD_NUMBER=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME" 2>/dev/null || echo "0")
+          if [ -z "$LATEST_GOOGLE_PLAY_BUILD_NUMBER" ] || [ "$LATEST_GOOGLE_PLAY_BUILD_NUMBER" -eq "0" ]; then
+            UPDATED_BUILD_NUMBER=$BUILD_NUMBER
+          else
+            UPDATED_BUILD_NUMBER=$(($LATEST_GOOGLE_PLAY_BUILD_NUMBER + 1))
+          fi
+          
+          TAG_VERSION_NAME=${CM_TAG#v}
+          ./gradlew :app:bundleRelease \
+            -PversionName="$TAG_VERSION_NAME" \
+            -PversionCode=$UPDATED_BUILD_NUMBER
+    artifacts:
+      - app/build/outputs/bundle/release/*.aab
+    publishing:
+      google_play:
+        credentials: $GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS
+        track: production
+      email:
+        recipients:
+          - angelvelasquezdev@gmail.com
+        notify:
+          success: true
+          failure: true
