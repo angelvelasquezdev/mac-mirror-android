@@ -101,4 +101,22 @@
     <string name="onboarding_step3_desc">Grant Notification Listener permission so MacMirror can seamlessly mirror notifications to your Mac.</string>
     <string name="onboarding_step3_grant">Grant Permission</string>
     <string name="onboarding_step3_granted">Permission Granted</string>
+
+    <!-- Background Service & Persistent Notification -->
+    <string name="persistent_channel_name">MacMirror Background Service</string>
+    <string name="persistent_channel_desc">Maintains active connection and mirrors notifications to your Mac</string>
+    <string name="persistent_notification_connected">Connected to %s</string>
+    <string name="persistent_notification_standby">Standby: Reconnecting to %s…</string>
+    <string name="persistent_notification_waiting">MacMirror active • Waiting for connection</string>
+    <string name="row_keep_alive_title">Background Service</string>
+    <string name="row_keep_alive_active">Persistent notification active (High priority)</string>
+    <string name="row_keep_alive_inactive">Standard system priority</string>
+
+    <!-- Battery Optimization -->
+    <string name="battery_optimization_card_title">Background Activity Restricted</string>
+    <string name="battery_optimization_card_desc">Android\'s battery saver may delay or pause notification mirroring while your screen is off. Disable battery optimization for instant delivery.</string>
+    <string name="battery_optimization_card_button">Disable Battery Optimization</string>
+    <string name="row_battery_optimization_title">Battery Optimization</string>
+    <string name="battery_status_unrestricted">Unrestricted (Instant delivery)</string>
+    <string name="battery_status_optimized">Optimized (May delay notifications)</string>
 </resources>

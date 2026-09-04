@@ -13,9 +13,14 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.angelsoft.macmirror.R
 import com.angelsoft.macmirror.ui.SettingsViewModel
 import com.angelsoft.macmirror.ui.components.CupertinoRow
@@ -35,9 +40,25 @@ fun SettingsScreen(
     onShowOnboarding: (() -> Unit)? = null,
     viewModel: SettingsViewModel = koinViewModel()
 ) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     val lowLatencyMode by viewModel.lowLatencyMode.collectAsState()
+    val keepAlivePersistentService by viewModel.keepAlivePersistentService.collectAsState()
+    val isBatteryOptimizationIgnored by viewModel.isBatteryOptimizationIgnored.collectAsState()
     val themeMode by viewModel.themeMode.collectAsState()
     val scrollState = rememberScrollState()
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME || event == Lifecycle.Event.ON_START) {
+                viewModel.refreshBatteryOptimizationStatus()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -96,6 +117,40 @@ fun SettingsScreen(
                 title = stringResource(R.string.section_network_title),
                 caption = stringResource(R.string.section_network_caption)
             ) {
+                // Fila: Ahorro de Batería
+                CupertinoRow(
+                    title = stringResource(R.string.row_battery_optimization_title),
+                    subtitle = if (isBatteryOptimizationIgnored) {
+                        stringResource(R.string.battery_status_unrestricted)
+                    } else {
+                        stringResource(R.string.battery_status_optimized)
+                    },
+                    icon = Icons.Default.Info,
+                    iconColor = if (isBatteryOptimizationIgnored) AppleGreen else Color(0xFFFF9500),
+                    showDivider = true,
+                    onClick = { viewModel.requestIgnoreBatteryOptimization(context) }
+                )
+
+                // Fila: Servicio en Segundo Plano
+                CupertinoRow(
+                    title = stringResource(R.string.row_keep_alive_title),
+                    subtitle = if (keepAlivePersistentService) {
+                        stringResource(R.string.row_keep_alive_active)
+                    } else {
+                        stringResource(R.string.row_keep_alive_inactive)
+                    },
+                    icon = Icons.Default.Notifications,
+                    iconColor = AppleIndigo,
+                    showDivider = true,
+                    trailingContent = {
+                        CupertinoSwitch(
+                            checked = keepAlivePersistentService,
+                            onCheckedChange = { viewModel.toggleKeepAlivePersistentService(it) }
+                        )
+                    }
+                )
+
+                // Fila: Baja Latencia
                 CupertinoRow(
                     title = stringResource(R.string.row_low_latency_title),
                     subtitle = if (lowLatencyMode) {

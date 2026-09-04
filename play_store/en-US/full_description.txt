@@ -1,0 +1,40 @@
+MacMirror bridges your Android smartphone and your Mac with unmatched elegance, speed, and privacy. Stream incoming notifications directly to your macOS menu bar in real time—without relying on third-party cloud servers or external accounts.
+
+IMPORTANT REQUIREMENT:
+MacMirror for Android is the companion app to MacMirror for macOS. To receive notifications, you must install and run the MacMirror menu bar companion app on your Mac connected to the same Wi-Fi network.
+MacMirror for macOS is free and open source:
+👉 https://github.com/angelvelasquezdev/mac-mirror-macos
+
+100% PRIVATE, LOCAL & ZERO-CLOUD
+Unlike standard push notification services, MacMirror operates strictly within your local Wi-Fi network. Your personal alerts, messages, and calls never pass through cloud servers or third-party databases.
+
+MILITARY-GRADE END-TO-END ENCRYPTION (E2EE)
+Security is built into MacMirror by design:
+• Ephemeral ECDH (Curve P-256) cryptographic key agreement during pairing.
+• HKDF-SHA256 session key derivation.
+• AES-256-GCM authenticated payload encryption.
+• Hardware-backed key protection using Android KeyStore.
+
+SEAMLESS PAIRING WITH ZERO CONFIGURATION
+No complicated IP setups required. MacMirror uses Bonjour (mDNS) to automatically discover your Mac on the local network. Simply enter the 6-digit PIN displayed in your Mac's menu bar to establish an encrypted, paired connection in seconds.
+
+GRANULAR PER-APP NOTIFICATION CONTROL
+You decide what reaches your desktop. Enable or disable mirroring on a per-application basis:
+• Instant search across all installed apps.
+• One-tap "Select All" or "Select None" filters.
+• Fast asynchronous app icon caching for smooth scrolling.
+
+ULTRA-LOW LATENCY WITH WEBSOCKETS
+Built with persistent, lightweight WebSockets for sub-second notification delivery. When battery saving is prioritized, MacMirror seamlessly adapts to efficient HTTP mode.
+
+ELEGANT NATIVE DESIGN
+Crafted with Jetpack Compose following Apple Human Interface Guidelines (HIG) Inset-Grouped cards and Material You accents. Enjoy fluid transitions, high contrast, and full Dark Mode support.
+
+100% OPEN SOURCE & TRANSPARENT
+MacMirror is proud to be open-source under the MIT License. Both the Android client and macOS companion app codebases are fully auditable:
+• Android Client: https://github.com/angelvelasquezdev/mac-mirror-android
+• macOS Server: https://github.com/angelvelasquezdev/mac-mirror-macos
+
+PERMISSIONS DISCLOSURE:
+• Notification Listener Access: Required to read incoming notifications and forward them to your authorized Mac. No notification contents are ever stored or uploaded to external servers.
+• Local Network / Wi-Fi: Required to communicate securely with your Mac on the local network.

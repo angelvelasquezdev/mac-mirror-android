@@ -1,5 +1,6 @@
 package com.angelsoft.macmirror.ui
 
+import android.content.Context
 import android.util.Base64
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -51,6 +52,17 @@ class MainViewModel(
     ) { paired, discovered ->
         paired && discovered != null
     }.stateIn(viewModelScope, SharingStarted.Lazily, false)
+
+    private val _isBatteryOptimizationIgnored = MutableStateFlow(true)
+    val isBatteryOptimizationIgnored: StateFlow<Boolean> = _isBatteryOptimizationIgnored
+
+    fun refreshBatteryOptimizationStatus(context: Context) {
+        _isBatteryOptimizationIgnored.value = com.angelsoft.macmirror.util.PermissionUtils.isBatteryOptimizationIgnored(context)
+    }
+
+    fun requestIgnoreBatteryOptimization(context: Context) {
+        com.angelsoft.macmirror.util.PermissionUtils.requestIgnoreBatteryOptimization(context)
+    }
 
     private val _pairingState = MutableStateFlow<PairingState>(PairingState.Idle)
     val pairingState: StateFlow<PairingState> = _pairingState

@@ -37,6 +37,10 @@ Built with **Jetpack Compose** following an **Apple HIG Inset-Grouped** design s
   - HKDF-SHA256 session key derivation.
   - AES-256-GCM authenticated payload encryption.
 - ⚡ **Zero Cloud Dependency**: Operates exclusively over your local Wi-Fi network via Bonjour / mDNS network discovery and secure WebSockets. No data ever leaves your local network.
+- 🛡️ **Reliable Background Execution**:
+  - **Doze Mode & Battery Saver Exemption**: One-tap native prompt to disable battery optimization (`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`), preventing Android from cutting local Wi-Fi transmission when the device is locked/sleeping. Includes an intelligent, auto-dismissing warning card on the main screen.
+  - **Foreground Service & Silent Persistent Notification**: Optional background service using Android's modern `connectedDevice` foreground service type (`FOREGROUND_SERVICE_CONNECTED_DEVICE`) with a silent notification (`IMPORTANCE_LOW`). Keeps the process alive against aggressive OEM task killers (MIUI/HyperOS, One UI, ColorOS) and dynamically reflects connection status ("Connected to Mac" / "Standby").
+  - **Auto-Protection for Low Latency**: Enabling Low Latency (WebSockets) automatically turns on the persistent service to ensure the socket stays connected 24/7.
 - 📱 **Per-App Filter Controls**: Selectively enable or disable notification mirroring per application with fast, asynchronous icon caching and real-time search.
 - 🎨 **Apple HIG-Inspired Design**: Native Inset-Grouped card layout, custom iOS-style segmented navigation bar, smooth transitions, and high-contrast accessible typography (WCAG AA compliant).
 - 🔄 **Bidirectional Unpairing**: Unpairing from Android automatically resets the macOS server, and unpairing from macOS immediately notifies Android.
@@ -68,19 +72,24 @@ Built with **Jetpack Compose** following an **Apple HIG Inset-Grouped** design s
 ```
 
 1. **Discovery**: Uses `NsdManager` (Network Service Discovery) to detect the Mac on the local network (`_macmirror._tcp`).
-2. **Pairing**: Secure handshake over HTTP (`POST /pair/start` and `POST /pair/verify`). The Mac generates a 6-digit cryptographic PIN displayed on the Menu Bar. Both devices verify identity using ECDH P-256 and derive an AES-256-GCM key stored in Android's `EncryptedSharedPreferences`.
-3. **Mirroring**: Android's `NotificationListenerService` captures status bar events, checks the per-app whitelist, encrypts the title, text, and icon, and sends them via WebSocket to macOS.
+2. **Pairing**: Secure handshake over HTTP (`POST /pair/initiate` and `POST /pair/confirm`). The Mac generates a 6-digit cryptographic PIN displayed on the Menu Bar. Both devices verify identity using ECDH P-256 and derive an AES-256-GCM key stored in Android Keystore / DataStore.
+3. **Mirroring & Background Reliability**:
+   - Android's `NotificationListenerService` captures status bar events, checks the per-app whitelist, encrypts the title, text, and icon, and sends them via WebSocket (or HTTP fallback) to macOS.
+   - When elevated via the **Background Service** toggle, `NotificationListener` runs as a Foreground Service with type `connectedDevice`, displaying a quiet status notification and preventing process termination under memory pressure.
+   - With **Battery Optimization disabled**, Android's Doze Mode allows network sockets to remain active and send notifications even when the screen is turned off.
 
 ---
 
 ## 📋 Requirements
 
-- **Android Device**: Android 9.0 (API Level 28) or later.
+- **Android Device**: Android 9.0 (API Level 28) or later (fully compatible with Android 14, 15, and 16).
 - **Local Network**: Android device and Mac must be connected to the same Wi-Fi network (or reachable subnet).
 - **Permissions Required**:
   - `Notification Listener Access` (`android.permission.BIND_NOTIFICATION_LISTENER_SERVICE`): To capture status bar notifications.
+  - `Battery Optimization Exemption` (`android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`): Prevents Doze Mode from freezing network transmission during sleep.
+  - `Foreground Service & Connected Device` (`android.permission.FOREGROUND_SERVICE`, `android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE`): Required on Android 14+ for background connection priority.
+  - `Post Notifications` (`android.permission.POST_NOTIFICATIONS`): For silent foreground service status indicator and test alerts.
   - `Access Wi-Fi State & Internet`: For local socket communication with the Mac.
-  - `Post Notifications` (Android 13+): For foreground service status indicator.
 
 ---
 
