@@ -40,6 +40,18 @@ captures/
 *.jks
 *.keystore
 
+# Secrets, keys and service account credentials
+.secrets/
+secrets/
+*-key.json
+*credentials*.json
+*.pem
+*.p12
+*.p8
+
+# Raw device captures (final processed store assets live in play_store/)
+screenshots/
+
 # Google Services (Firebase)
 google-services.json
 
@@ -50,3 +62,4 @@ google-services.json
 # OS specific
 .DS_Store
 Thumbs.db
+

@@ -88,8 +88,18 @@ class SettingsViewModel(
     val lowLatencyMode: StateFlow<Boolean> = preferencesManager.lowLatencyModeFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val keepAlivePersistentService: StateFlow<Boolean> = preferencesManager.keepAlivePersistentServiceFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    private val _isBatteryOptimizationIgnored = MutableStateFlow(com.angelsoft.macmirror.util.PermissionUtils.isBatteryOptimizationIgnored(context))
+    val isBatteryOptimizationIgnored: StateFlow<Boolean> = _isBatteryOptimizationIgnored
+
     val themeMode: StateFlow<Int> = preferencesManager.themeModeFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    fun refreshBatteryOptimizationStatus() {
+        _isBatteryOptimizationIgnored.value = com.angelsoft.macmirror.util.PermissionUtils.isBatteryOptimizationIgnored(context)
+    }
 
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
@@ -113,7 +123,20 @@ class SettingsViewModel(
     fun toggleLowLatencyMode(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.setLowLatencyMode(enabled)
+            if (enabled) {
+                preferencesManager.setKeepAlivePersistentService(true)
+            }
         }
+    }
+
+    fun toggleKeepAlivePersistentService(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.setKeepAlivePersistentService(enabled)
+        }
+    }
+
+    fun requestIgnoreBatteryOptimization(ctx: Context) {
+        com.angelsoft.macmirror.util.PermissionUtils.requestIgnoreBatteryOptimization(ctx)
     }
 
     fun setThemeMode(mode: Int) {

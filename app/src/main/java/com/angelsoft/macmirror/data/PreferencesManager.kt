@@ -20,6 +20,7 @@ class PreferencesManager(private val context: Context) {
         private val LOW_LATENCY_MODE = booleanPreferencesKey("low_latency_mode")
         private val THEME_MODE = intPreferencesKey("theme_mode")
         private val COMPLETED_ONBOARDING = booleanPreferencesKey("completed_onboarding")
+        private val KEEP_ALIVE_PERSISTENT_SERVICE = booleanPreferencesKey("keep_alive_persistent_service")
     }
 
     val hasCompletedOnboardingFlow: Flow<Boolean> = context.dataStore.data.map { prefs ->
@@ -52,6 +53,16 @@ class PreferencesManager(private val context: Context) {
 
     val themeModeFlow: Flow<Int> = context.dataStore.data.map { prefs ->
         prefs[THEME_MODE] ?: 0
+    }
+
+    val keepAlivePersistentServiceFlow: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[KEEP_ALIVE_PERSISTENT_SERVICE] ?: false
+    }
+
+    suspend fun setKeepAlivePersistentService(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[KEEP_ALIVE_PERSISTENT_SERVICE] = enabled
+        }
     }
 
     suspend fun setLowLatencyMode(enabled: Boolean) {

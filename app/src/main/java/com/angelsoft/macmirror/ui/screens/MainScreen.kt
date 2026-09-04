@@ -15,6 +15,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Phone
@@ -79,6 +80,9 @@ fun MainScreen(
     var permissionGranted by remember {
         mutableStateOf(PermissionUtils.isNotificationServiceEnabled(context))
     }
+    var isBatteryOptimizationIgnored by remember {
+        mutableStateOf(PermissionUtils.isBatteryOptimizationIgnored(context))
+    }
 
     // Auto-detect when returning to the app from System Settings
     DisposableEffect(lifecycleOwner) {
@@ -87,6 +91,8 @@ fun MainScreen(
                 if (PermissionUtils.isNotificationServiceEnabled(context)) {
                     permissionGranted = true
                 }
+                isBatteryOptimizationIgnored = PermissionUtils.isBatteryOptimizationIgnored(context)
+                viewModel.refreshBatteryOptimizationStatus(context)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -103,6 +109,18 @@ fun MainScreen(
                 break
             }
             delay(350)
+        }
+    }
+
+    // Active polling while battery optimization not ignored
+    LaunchedEffect(isBatteryOptimizationIgnored) {
+        while (!isBatteryOptimizationIgnored) {
+            if (PermissionUtils.isBatteryOptimizationIgnored(context)) {
+                isBatteryOptimizationIgnored = true
+                viewModel.refreshBatteryOptimizationStatus(context)
+                break
+            }
+            delay(500)
         }
     }
 
@@ -230,7 +248,65 @@ fun MainScreen(
                 }
             }
 
-            // 2. Main Connection Experience
+            // 2. Battery Optimization Advisory Card (Auto-hides as soon as optimization is ignored)
+            AnimatedVisibility(
+                visible = permissionGranted && isPaired && !isBatteryOptimizationIgnored,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                CupertinoCard(cornerRadius = 20.dp) {
+                    Column(
+                        modifier = Modifier.padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFFF9500).copy(alpha = 0.14f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Info,
+                                    contentDescription = null,
+                                    tint = Color(0xFFFF9500),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.battery_optimization_card_title),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+
+                        Text(
+                            text = stringResource(R.string.battery_optimization_card_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            lineHeight = 19.sp
+                        )
+
+                        AppleButton(
+                            text = stringResource(R.string.battery_optimization_card_button),
+                            onClick = {
+                                viewModel.requestIgnoreBatteryOptimization(context)
+                            },
+                            isPrimary = true
+                        )
+                    }
+                }
+            }
+
+            // 3. Main Connection Experience
             if (isPaired) {
                 // PAIRED STATE
                 CupertinoSection(

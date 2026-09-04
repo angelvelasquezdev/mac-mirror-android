@@ -101,4 +101,22 @@
     <string name="onboarding_step3_desc">Otorga acceso al Listener de Notificaciones para que MacMirror pueda reflejar tus alertas de forma transparente.</string>
     <string name="onboarding_step3_grant">Otorgar Permiso</string>
     <string name="onboarding_step3_granted">Permiso Otorgado</string>
+
+    <!-- Background Service & Persistent Notification -->
+    <string name="persistent_channel_name">Servicio en segundo plano de MacMirror</string>
+    <string name="persistent_channel_desc">Mantiene la conexión activa y transmite notificaciones a tu Mac</string>
+    <string name="persistent_notification_connected">Conectado a %s</string>
+    <string name="persistent_notification_standby">En espera: Reconectando a %s…</string>
+    <string name="persistent_notification_waiting">MacMirror activo • Esperando conexión</string>
+    <string name="row_keep_alive_title">Servicio en Segundo Plano</string>
+    <string name="row_keep_alive_active">Notificación persistente activa (Alta prioridad)</string>
+    <string name="row_keep_alive_inactive">Prioridad estándar del sistema</string>
+
+    <!-- Battery Optimization -->
+    <string name="battery_optimization_card_title">Actividad en segundo plano restringida</string>
+    <string name="battery_optimization_card_desc">El ahorro de batería de Android puede retrasar o suspender la sincronización con la pantalla apagada. Desactiva la optimización para una entrega inmediata.</string>
+    <string name="battery_optimization_card_button">Desactivar Ahorro de Batería</string>
+    <string name="row_battery_optimization_title">Ahorro de Batería</string>
+    <string name="battery_status_unrestricted">Sin restricciones (Entrega inmediata)</string>
+    <string name="battery_status_optimized">Optimizado (Puede haber retrasos)</string>
 </resources>

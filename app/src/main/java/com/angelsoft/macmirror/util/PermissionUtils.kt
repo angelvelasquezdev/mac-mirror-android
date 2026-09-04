@@ -62,4 +62,39 @@ object PermissionUtils {
 
         return false
     }
+
+    /**
+     * Checks if battery optimization is disabled (unrestricted background execution / ignored Doze).
+     */
+    fun isBatteryOptimizationIgnored(context: Context): Boolean {
+        return try {
+            val powerManager = context.getSystemService(Context.POWER_SERVICE) as? android.os.PowerManager
+            powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: false
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Requests the user to disable battery optimization for this application.
+     * Launches the system direct prompt or falls back to system battery optimization settings.
+     */
+    fun requestIgnoreBatteryOptimization(context: Context) {
+        try {
+            val intent = android.content.Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                data = android.net.Uri.parse("package:${context.packageName}")
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            try {
+                val fallbackIntent = android.content.Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(fallbackIntent)
+            } catch (fallbackEx: Exception) {
+                // Ignore
+            }
+        }
+    }
 }

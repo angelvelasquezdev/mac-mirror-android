@@ -1,0 +1,40 @@
+MacMirror conecta tu teléfono Android y tu Mac con máxima elegancia, velocidad y privacidad. Recibe tus notificaciones en la barra de menú de macOS en tiempo real, sin depender de servidores en la nube ni cuentas de terceros.
+
+REQUISITO INDISPENSABLE:
+MacMirror para Android requiere la aplicación complementaria para macOS. Para recibir notificaciones en tu Mac, debes instalar y abrir MacMirror en tu Mac conectado a la misma red Wi-Fi.
+MacMirror para macOS es gratuita y de código abierto:
+👉 https://github.com/angelvelasquezdev/mac-mirror-macos
+
+100% PRIVADO, LOCAL Y SIN NUBE
+A diferencia de otros servicios de sincronización, MacMirror funciona exclusivamente dentro de tu red Wi-Fi local. Tus mensajes, llamadas y alertas nunca viajan por servidores externos ni quedan almacenados en la nube.
+
+CIFRADO EXTREMO A EXTREMO (E2EE)
+La seguridad está integrada desde el núcleo:
+• Intercambio de claves efímero mediante ECDH (Curva P-256).
+• Derivación de claves de sesión con HKDF-SHA256.
+• Cifrado autenticado de notificaciones con AES-256-GCM.
+• Protección de claves en el enclave seguro con Android KeyStore.
+
+VINCULACIÓN RÁPIDA CON CÓDIGO PIN
+Olvídate de configuraciones complicadas. MacMirror detecta automáticamente tu Mac en la red mediante Bonjour (mDNS). Solo introduce el código PIN de 6 dígitos que aparece en la barra de menú de tu Mac y la conexión cifrada quedará lista en segundos.
+
+CONTROL SELECTIVO POR APLICACIÓN
+Tú decides qué alertas llegan a tu pantalla. Controla el filtrado individualmente:
+• Búsqueda instantánea entre todas tus aplicaciones instaladas.
+• Botones rápidos para seleccionar o deseleccionar todas las apps.
+• Caché asíncrona de iconos para un desplazamiento suave y fluido.
+
+BAJA LATENCIA CON WEBSOCKETS
+Diseñado con un canal persistente de WebSockets para una entrega de notificaciones en menos de un segundo. También incluye modo de ahorro de batería inteligente por HTTP.
+
+DISEÑO NATIVO ELEGANTE
+Creado con Jetpack Compose siguiendo las guías de diseño de Apple HIG (tarjetas Inset-Grouped) y Material You. Totalmente adaptado para Modo Claro y Modo Oscuro con contrastes óptimos.
+
+100% CÓDIGO ABIERTO Y TRANSPARENTE
+MacMirror es un proyecto libre bajo licencia MIT. Tanto el cliente Android como el servidor macOS son de código abierto y auditables:
+• Repositorio Android: https://github.com/angelvelasquezdev/mac-mirror-android
+• Repositorio macOS: https://github.com/angelvelasquezdev/mac-mirror-macos
+
+TRANSPARENCIA EN PERMISOS:
+• Acceso a Notificaciones: Necesario para leer las notificaciones entrantes y enviarlas a tu Mac autorizado. Ninguna notificación se almacena ni se comparte externamente.
+• Red Local / Wi-Fi: Necesario para comunicarse de forma segura con tu Mac en tu red doméstica o de oficina.
