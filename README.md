@@ -117,6 +117,25 @@ You can open the project in **Android Studio** or build from the command line:
 
 ---
 
+## 🗺️ Roadmap
+
+- [ ] 🔘 Android Quick Settings Tile (`TileService`) for one-tap service toggling.
+- [ ] 🔋 Real-time battery status and charging telemetry in companion payload.
+- [ ] 🚫 Per-app notification blacklisting / mute toggles in `AppsScreen.kt`.
+- [ ] 🌐 Expand localizations (French, German, Portuguese, Italian, Japanese).
+- [ ] 📋 Secure local clipboard synchronization.
+
+---
+
+## 🤝 Contributing
+
+Contributions are warmly welcome! Whether you are fixing bugs, proposing new features, or improving localizations:
+
+1. Check open issues tagged with [`good first issue`](https://github.com/angelvelasquezdev/mac-mirror-android/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) and [`help wanted`](https://github.com/angelvelasquezdev/mac-mirror-android/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22).
+2. Read the [Contributing Guide](CONTRIBUTING.md) for local setup, code style, and submission workflows.
+
+---
+
 ## 🔗 Related Projects
 
 | Project | Description | Repository |
