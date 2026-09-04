@@ -118,6 +118,25 @@ Puedes abrir la carpeta del proyecto en **Android Studio** o ejecutar en la term
 
 ---
 
+## 🗺️ Hoja de Ruta (Roadmap)
+
+- [ ] 🔘 Quick Settings Tile en Android (`TileService`) para activar/desactivar el servicio con un toque.
+- [ ] 🔋 Telemetría en tiempo real del porcentaje de batería y estado de carga hacia el Mac.
+- [ ] 🚫 Silenciar o excluir apps específicas en `AppsScreen.kt`.
+- [ ] 🌐 Nuevas traducciones (Francés, Alemán, Portugués, Italiano, Japonés).
+- [ ] 📋 Sincronización segura del portapapeles local.
+
+---
+
+## 🤝 Cómo Contribuir
+
+¡Las contribuciones son muy bienvenidas! Ya sea reportando errores, sugiriendo mejoras o traduciendo la app:
+
+1. Revisa las issues abiertas etiquetadas con [`good first issue`](https://github.com/angelvelasquezdev/mac-mirror-android/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) y [`help wanted`](https://github.com/angelvelasquezdev/mac-mirror-android/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22).
+2. Consulta la [Guía de Contribución](CONTRIBUTING.md) para conocer el entorno de desarrollo, estilo de código y flujo de Pull Requests.
+
+---
+
 ## 🔗 Proyectos Relacionados
 
 | Proyecto | Descripción | Repositorio |
