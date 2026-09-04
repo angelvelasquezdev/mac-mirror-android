@@ -19,7 +19,6 @@ workflows:
       branch_patterns:
         - pattern: 'develop'
           include: true
-          source: true
     when:
       changeset:
         includes:
@@ -175,10 +174,10 @@ workflows:
       events:
         - tag
       tag_patterns:
-        - pattern: 'v*-beta*'
-          include: false
         - pattern: 'v*'
           include: true
+        - pattern: 'v*-beta*'
+          include: false
     scripts:
       - name: Set up local.properties
         script: |
