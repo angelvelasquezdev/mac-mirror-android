@@ -24,6 +24,10 @@
     <string name="server_address_title">Server Address</string>
     <string name="server_address_auto">Automatic via Bonjour</string>
     <string name="btn_send_test_notification">Send Test Notification</string>
+    <string name="test_notification_channel_name">Test Notifications</string>
+    <string name="test_notification_channel_desc">Used to test MacMirror end-to-end connectivity</string>
+    <string name="test_notification_title">Test Notification</string>
+    <string name="test_notification_text">Hello from MacMirror! End-to-end integration test succeeded.</string>
     <string name="btn_unpair_mac">Unpair this Mac</string>
 
     <string name="searching_mac_title">Searching for your Mac…</string>

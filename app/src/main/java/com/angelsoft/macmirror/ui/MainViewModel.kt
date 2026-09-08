@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -46,11 +47,14 @@ class MainViewModel(
 
     val discoveredServerUrl: StateFlow<String?> = nsdHelper.resolvedServerUrl
 
+    private val _isServerReachable = MutableStateFlow(false)
+
     val isConnected: StateFlow<Boolean> = combine(
         isPaired,
-        discoveredServerUrl
-    ) { paired, discovered ->
-        paired && discovered != null
+        discoveredServerUrl,
+        _isServerReachable
+    ) { paired, discovered, reachable ->
+        paired && reachable
     }.stateIn(viewModelScope, SharingStarted.Lazily, false)
 
     private val _isBatteryOptimizationIgnored = MutableStateFlow(true)
@@ -71,13 +75,34 @@ class MainViewModel(
         nsdHelper.startDiscovery()
         viewModelScope.launch {
             combine(isPaired, discoveredServerUrl, savedServerUrl) { paired, discovered, saved ->
-                if (paired && discovered != null) {
-                    if (discovered != saved) {
-                        preferencesManager.updateServerUrl(discovered)
+                if (paired) {
+                    val targetUrl = discovered ?: saved
+                    if (targetUrl != null) {
+                        if (discovered != null && discovered != saved) {
+                            preferencesManager.updateServerUrl(discovered)
+                        }
+                        checkServerStatus(targetUrl)
+                    } else {
+                        _isServerReachable.value = false
                     }
-                    checkServerStatus(discovered)
+                } else {
+                    _isServerReachable.value = false
                 }
             }.collect {}
+        }
+
+        // Periodic reachability heartbeat every 8 seconds when paired
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(8000)
+                val paired = preferencesManager.isPairedFlow.first()
+                if (paired) {
+                    val targetUrl = discoveredServerUrl.value ?: savedServerUrl.value
+                    if (targetUrl != null) {
+                        checkServerStatus(targetUrl)
+                    }
+                }
+            }
         }
     }
 
@@ -103,12 +128,12 @@ class MainViewModel(
         } ?: discoveredServerUrl.value
 
         if (targetUrl == null) {
-            _pairingState.value = PairingState.Error("No macOS device discovered on local network.")
+            _pairingState.value = PairingState.Error("No macOS device discovered", com.angelsoft.macmirror.R.string.err_no_mac_discovered)
             return
         }
 
         if (pin.length != 6) {
-            _pairingState.value = PairingState.Error("PIN must be 6 digits.")
+            _pairingState.value = PairingState.Error("PIN must be 6 digits", com.angelsoft.macmirror.R.string.err_pin_must_be_6_digits)
             return
         }
 
@@ -120,11 +145,11 @@ class MainViewModel(
                 if (result) {
                     _pairingState.value = PairingState.Success
                 } else {
-                    _pairingState.value = PairingState.Error("Pairing confirmation failed. Verify the PIN.")
+                    _pairingState.value = PairingState.Error("Pairing confirmation failed", com.angelsoft.macmirror.R.string.err_pairing_failed)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Pairing error", e)
-                _pairingState.value = PairingState.Error("Connection error: ${e.localizedMessage}")
+                _pairingState.value = PairingState.Error(e.localizedMessage ?: "Connection error", com.angelsoft.macmirror.R.string.err_connection_error)
             }
         }
     }
@@ -189,6 +214,9 @@ class MainViewModel(
                 serverUrl = serverUrl,
                 encryptedKeyBase64 = encryptedKeyStr
             )
+            // Enable Persistent Service by default upon pairing (per user choice in /grill-me)
+            preferencesManager.setKeepAlivePersistentService(true)
+            _isServerReachable.value = true
             true
         } else {
             Log.e(TAG, "Confirmation failed: ${confirmResponse.code}")
@@ -213,6 +241,7 @@ class MainViewModel(
                 }
             }
             preferencesManager.clearPairing()
+            _isServerReachable.value = false
             _pairingState.value = PairingState.Idle
         }
     }
@@ -232,15 +261,24 @@ class MainViewModel(
                         if (!serverPaired) {
                             Log.i(TAG, "Server reports it is not paired. Auto-clearing local pairing.")
                             preferencesManager.clearPairing()
+                            _isServerReachable.value = false
+                        } else {
+                            _isServerReachable.value = true
                         }
+                    } else {
+                        _isServerReachable.value = false
                     }
-                } else if (response.code == 401) {
-                    Log.i(TAG, "Server responded with 401. Auto-clearing local pairing.")
-                    preferencesManager.clearPairing()
+                } else {
+                    _isServerReachable.value = false
+                    if (response.code == 401) {
+                        Log.i(TAG, "Server responded with 401. Auto-clearing local pairing.")
+                        preferencesManager.clearPairing()
+                    }
                 }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Could not check server status at $serverUrl", e)
+            _isServerReachable.value = false
+            Log.w(TAG, "Could not check server status at $serverUrl: ${e.message}")
         }
     }
 
@@ -249,23 +287,31 @@ class MainViewModel(
     }
 
     fun sendTestNotification(context: android.content.Context) {
+        // Ensure the notification listener service is bound and active
+        com.angelsoft.macmirror.util.PermissionUtils.rebindNotificationListener(context)
+
         val notificationManager = context.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
         
+        val channelName = context.getString(com.angelsoft.macmirror.R.string.test_notification_channel_name)
+        val channelDesc = context.getString(com.angelsoft.macmirror.R.string.test_notification_channel_desc)
+        val title = context.getString(com.angelsoft.macmirror.R.string.test_notification_title)
+        val text = context.getString(com.angelsoft.macmirror.R.string.test_notification_text)
+
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             val channel = android.app.NotificationChannel(
                 "test_channel",
-                "Test Notifications",
+                channelName,
                 android.app.NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Used to test MacMirror end-to-end connectivity"
+                description = channelDesc
             }
             notificationManager.createNotificationChannel(channel)
         }
         
         val notification = androidx.core.app.NotificationCompat.Builder(context, "test_channel")
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("Test Notification")
-            .setContentText("Hello from MacMirror! End-to-end integration test succeeded.")
+            .setSmallIcon(com.angelsoft.macmirror.R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(text)
             .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
             .addExtras(android.os.Bundle().apply {
                 putBoolean("is_test_notification", true)

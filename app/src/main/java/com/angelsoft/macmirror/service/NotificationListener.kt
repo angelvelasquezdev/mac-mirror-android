@@ -27,6 +27,10 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import android.content.ComponentName
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.json.JSONObject
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -38,6 +42,28 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
         private const val PERSISTENT_CHANNEL_ID = "macmirror_persistent_service"
         private const val PERSISTENT_NOTIFICATION_ID = 1001
+
+        private val _isServiceBound = MutableStateFlow(false)
+        val isServiceBound: StateFlow<Boolean> = _isServiceBound
+    }
+
+    override fun onListenerConnected() {
+        super.onListenerConnected()
+        Log.i(TAG, "NotificationListenerService successfully connected to Android system.")
+        _isServiceBound.value = true
+    }
+
+    override fun onListenerDisconnected() {
+        super.onListenerDisconnected()
+        Log.w(TAG, "NotificationListenerService disconnected from Android system. Requesting rebind...")
+        _isServiceBound.value = false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            try {
+                requestRebind(ComponentName(this, NotificationListener::class.java))
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to requestRebind in onListenerDisconnected", e)
+            }
+        }
     }
 
     private val preferencesManager: PreferencesManager by inject()
@@ -216,27 +242,41 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
             .post(payloadJson.toString().toRequestBody(JSON_MEDIA_TYPE))
             .build()
 
-        try {
-            httpClient.newCall(request).execute().use { response ->
-                if (response.code == 401) {
-                    Log.w(TAG, "Server returned 401 Unauthorized. Auto-clearing pairing on Android.")
-                    serviceScope.launch {
-                        preferencesManager.clearPairing()
+        var delivered = false
+        for (attempt in 1..2) {
+            try {
+                httpClient.newCall(request).execute().use { response ->
+                    if (response.code == 401) {
+                        Log.w(TAG, "Server returned 401 Unauthorized. Auto-clearing pairing on Android.")
+                        serviceScope.launch {
+                            preferencesManager.clearPairing()
+                        }
+                        return
+                    } else if (!response.isSuccessful) {
+                        Log.e(TAG, "Notification mirroring request failed via HTTP fallback: code ${response.code}")
+                    } else {
+                        Log.d(TAG, "Notification mirrored successfully via HTTP fallback: ${response.code}")
+                        delivered = true
+                        return
                     }
-                } else if (!response.isSuccessful) {
-                    Log.e(TAG, "Notification mirroring request failed via HTTP fallback: code ${response.code}")
-                } else {
-                    Log.d(TAG, "Notification mirrored successfully via HTTP fallback: ${response.code}")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "HTTP fallback attempt $attempt failed: ${e.message}")
+                if (attempt == 1) {
+                    Thread.sleep(300)
                 }
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed network delivery of notification via HTTP fallback", e)
+        }
+        if (!delivered) {
+            Log.e(TAG, "Failed network delivery of notification via HTTP fallback to $serverUrl")
         }
     }
 
     private fun getWebSocketUrl(httpUrl: String): String {
-        val host = httpUrl.removePrefix("http://").substringBefore(":")
-        return "ws://$host:50002/ws"
+        val parsed = httpUrl.toHttpUrlOrNull()
+        val host = parsed?.host ?: httpUrl.removePrefix("http://").substringBefore(":")
+        val formattedHost = if (host.contains(":") && !host.startsWith("[")) "[$host]" else host
+        return "ws://$formattedHost:50002/ws"
     }
 
     private fun connectWebSocket(url: String) {

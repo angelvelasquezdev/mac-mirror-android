@@ -57,6 +57,7 @@ fun OnboardingScreen(
             if (event == Lifecycle.Event.ON_RESUME || event == Lifecycle.Event.ON_START) {
                 if (PermissionUtils.isNotificationServiceEnabled(context)) {
                     permissionGranted = true
+                    PermissionUtils.rebindNotificationListener(context)
                 }
             }
         }
@@ -71,6 +72,7 @@ fun OnboardingScreen(
         while (!permissionGranted) {
             if (PermissionUtils.isNotificationServiceEnabled(context)) {
                 permissionGranted = true
+                PermissionUtils.rebindNotificationListener(context)
                 break
             }
             delay(350)

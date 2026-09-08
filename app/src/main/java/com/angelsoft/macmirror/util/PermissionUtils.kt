@@ -97,4 +97,22 @@ object PermissionUtils {
             }
         }
     }
+
+    /**
+     * Rebinds the NotificationListenerService if access is granted.
+     * Prevents Android system service drops after updates, process restarts, or Doze mode.
+     */
+    fun rebindNotificationListener(context: Context) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            if (isNotificationServiceEnabled(context)) {
+                try {
+                    val componentName = ComponentName(context, NotificationListener::class.java)
+                    android.service.notification.NotificationListenerService.requestRebind(componentName)
+                    android.util.Log.d("PermissionUtils", "NotificationListenerService.requestRebind requested successfully.")
+                } catch (e: Exception) {
+                    android.util.Log.e("PermissionUtils", "Failed to requestRebind NotificationListenerService", e)
+                }
+            }
+        }
+    }
 }

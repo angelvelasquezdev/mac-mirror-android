@@ -90,6 +90,7 @@ fun MainScreen(
             if (event == Lifecycle.Event.ON_RESUME || event == Lifecycle.Event.ON_START) {
                 if (PermissionUtils.isNotificationServiceEnabled(context)) {
                     permissionGranted = true
+                    PermissionUtils.rebindNotificationListener(context)
                 }
                 isBatteryOptimizationIgnored = PermissionUtils.isBatteryOptimizationIgnored(context)
                 viewModel.refreshBatteryOptimizationStatus(context)
@@ -106,6 +107,7 @@ fun MainScreen(
         while (!permissionGranted) {
             if (PermissionUtils.isNotificationServiceEnabled(context)) {
                 permissionGranted = true
+                PermissionUtils.rebindNotificationListener(context)
                 break
             }
             delay(350)
