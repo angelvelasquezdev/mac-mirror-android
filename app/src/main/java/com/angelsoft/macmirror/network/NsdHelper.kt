@@ -82,11 +82,20 @@ class NsdHelper(context: Context) {
             override fun onServiceResolved(resolvedInfo: NsdServiceInfo?) {
                 Log.d(TAG, "Service resolved: $resolvedInfo")
                 if (resolvedInfo != null) {
-                    val host = resolvedInfo.host.hostAddress
-                    val port = resolvedInfo.port
-                    val url = "http://$host:$port"
-                    Log.d(TAG, "Resolved macOS Server: $url")
-                    _resolvedServerUrl.value = url
+                    val hostAddress = resolvedInfo.host?.hostAddress
+                    if (!hostAddress.isNullOrBlank()) {
+                        // Strip zone/scope index (e.g. %wlan0) which is invalid in standard HTTP URLs
+                        val cleanHost = hostAddress.substringBefore("%")
+                        val formattedHost = if (cleanHost.contains(":") && !cleanHost.startsWith("[")) {
+                            "[$cleanHost]"
+                        } else {
+                            cleanHost
+                        }
+                        val port = resolvedInfo.port
+                        val url = "http://$formattedHost:$port"
+                        Log.d(TAG, "Resolved macOS Server: $url")
+                        _resolvedServerUrl.value = url
+                    }
                 }
             }
         }

@@ -24,6 +24,10 @@
     <string name="server_address_title">Dirección del Servidor</string>
     <string name="server_address_auto">Automático por Bonjour</string>
     <string name="btn_send_test_notification">Enviar Notificación de Prueba</string>
+    <string name="test_notification_channel_name">Notificaciones de prueba</string>
+    <string name="test_notification_channel_desc">Utilizado para probar la conectividad de MacMirror de extremo a extremo</string>
+    <string name="test_notification_title">Notificación de prueba</string>
+    <string name="test_notification_text">¡Hola desde MacMirror! La prueba de integración de extremo a extremo se completó con éxito.</string>
     <string name="btn_unpair_mac">Desvincular este Mac</string>
 
     <string name="searching_mac_title">Buscando tu Mac…</string>

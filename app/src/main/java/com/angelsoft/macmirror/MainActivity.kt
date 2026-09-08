@@ -42,6 +42,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        com.angelsoft.macmirror.util.PermissionUtils.rebindNotificationListener(this)
         setContent {
             val themeMode by preferencesManager.themeModeFlow.collectAsState(initial = 0)
             val hasCompletedOnboarding by preferencesManager.hasCompletedOnboardingFlow.collectAsState(initial = true)
