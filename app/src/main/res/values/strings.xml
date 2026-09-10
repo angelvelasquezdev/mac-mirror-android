@@ -123,4 +123,35 @@
     <string name="row_battery_optimization_title">Battery Optimization</string>
     <string name="battery_status_unrestricted">Unrestricted (Instant delivery)</string>
     <string name="battery_status_optimized">Optimized (May delay notifications)</string>
+    <!-- Diagnostic Test Modal -->
+    <string name="diag_title">Connection Diagnostics</string>
+    <string name="diag_subtitle">Verifying the full notification delivery pipeline</string>
+    <string name="diag_step1_title">System Permissions</string>
+    <string name="diag_step1_ok">Notification and listener permissions granted</string>
+    <string name="diag_step1_err">Required permissions missing (tap to fix)</string>
+    <string name="diag_step2_title">Background Listener Service</string>
+    <string name="diag_step2_ok">NotificationListenerService bound and running</string>
+    <string name="diag_step2_err">Listener service is not bound by Android</string>
+    <string name="diag_step3_title">macOS Connectivity</string>
+    <string name="diag_step3_ok">macOS server reachable and communication channel ready</string>
+    <string name="diag_step3_err">macOS server is unreachable on local network</string>
+    <string name="diag_step4_title">Local Test Notification</string>
+    <string name="diag_step4_ok">Standard system notification posted locally</string>
+    <string name="diag_step4_err">Failed to post notification locally</string>
+    <string name="diag_step5_title">Listener Interception</string>
+    <string name="diag_step5_ok">Notification intercepted by MacMirror listener</string>
+    <string name="diag_step5_err">Listener failed to capture notification</string>
+    <string name="diag_step6_title">Encrypted Transmission</string>
+    <string name="diag_step6_ok">Encrypted with AES-256-GCM and transmitted</string>
+    <string name="diag_step6_err">Network delivery failed</string>
+    <string name="diag_step7_title">macOS Delivery Confirmation (ACK)</string>
+    <string name="diag_step7_ok">Decrypted and displayed on macOS successfully</string>
+    <string name="diag_step7_err">macOS did not confirm receipt within timeout</string>
+    <string name="diag_btn_repeat">Repeat Diagnostic</string>
+    <string name="diag_btn_close">Done</string>
+    <string name="diag_status_testing">Running diagnostic pipeline…</string>
+    <string name="diag_status_passed">Everything is working! Your connection is healthy.</string>
+    <string name="diag_status_failed">Diagnostic failed. See details below.</string>
+    <string name="persistent_notification_unpaired">MacMirror active • Waiting for pairing</string>
+    <string name="persistent_notification_searching">MacMirror active • Searching for %s…</string>
 </resources>

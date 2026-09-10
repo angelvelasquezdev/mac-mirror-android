@@ -286,39 +286,256 @@ class MainViewModel(
         _pairingState.value = PairingState.Idle
     }
 
+    enum class DiagnosticStepId {
+        PERMISSIONS,
+        SERVICE_RUNNING,
+        MACOS_REACHABILITY,
+        LOCAL_NOTIFICATION,
+        LISTENER_INTERCEPT,
+        ENCRYPT_AND_SEND,
+        MACOS_ACK
+    }
+
+    enum class StepStatus {
+        PENDING,
+        RUNNING,
+        SUCCESS,
+        ERROR
+    }
+
+    data class DiagnosticStep(
+        val id: DiagnosticStepId,
+        val titleResId: Int,
+        val status: StepStatus = StepStatus.PENDING,
+        val detailResId: Int? = null,
+        val errorDetail: String? = null
+    )
+
+    data class DiagnosticState(
+        val isVisible: Boolean = false,
+        val isRunning: Boolean = false,
+        val steps: List<DiagnosticStep> = emptyList(),
+        val isCompleted: Boolean = false,
+        val hasError: Boolean = false
+    )
+
+    private val _diagnosticState = MutableStateFlow(DiagnosticState())
+    val diagnosticState: StateFlow<DiagnosticState> = _diagnosticState
+
+    private var diagnosticJob: kotlinx.coroutines.Job? = null
+
+    fun runDiagnosticTest(context: android.content.Context) {
+        diagnosticJob?.cancel()
+        diagnosticJob = viewModelScope.launch {
+            val initialSteps = listOf(
+                DiagnosticStep(DiagnosticStepId.PERMISSIONS, com.angelsoft.macmirror.R.string.diag_step1_title),
+                DiagnosticStep(DiagnosticStepId.SERVICE_RUNNING, com.angelsoft.macmirror.R.string.diag_step2_title),
+                DiagnosticStep(DiagnosticStepId.MACOS_REACHABILITY, com.angelsoft.macmirror.R.string.diag_step3_title),
+                DiagnosticStep(DiagnosticStepId.LOCAL_NOTIFICATION, com.angelsoft.macmirror.R.string.diag_step4_title),
+                DiagnosticStep(DiagnosticStepId.LISTENER_INTERCEPT, com.angelsoft.macmirror.R.string.diag_step5_title),
+                DiagnosticStep(DiagnosticStepId.ENCRYPT_AND_SEND, com.angelsoft.macmirror.R.string.diag_step6_title),
+                DiagnosticStep(DiagnosticStepId.MACOS_ACK, com.angelsoft.macmirror.R.string.diag_step7_title)
+            )
+
+            _diagnosticState.value = DiagnosticState(
+                isVisible = true,
+                isRunning = true,
+                steps = initialSteps,
+                isCompleted = false,
+                hasError = false
+            )
+
+            fun updateStep(
+                id: DiagnosticStepId,
+                status: StepStatus,
+                detailResId: Int? = null,
+                errorDetail: String? = null
+            ) {
+                val current = _diagnosticState.value
+                val updatedSteps = current.steps.map { step ->
+                    if (step.id == id) {
+                        step.copy(status = status, detailResId = detailResId, errorDetail = errorDetail)
+                    } else {
+                        step
+                    }
+                }
+                _diagnosticState.value = current.copy(
+                    steps = updatedSteps,
+                    hasError = current.hasError || (status == StepStatus.ERROR)
+                )
+            }
+
+            // Step 1: Check permissions
+            updateStep(DiagnosticStepId.PERMISSIONS, StepStatus.RUNNING)
+            kotlinx.coroutines.delay(200)
+
+            val listenerEnabled = com.angelsoft.macmirror.util.PermissionUtils.isNotificationServiceEnabled(context)
+            val postGranted = if (android.os.Build.VERSION.SDK_INT >= 33) {
+                androidx.core.content.ContextCompat.checkSelfPermission(
+                    context,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            } else true
+
+            if (!listenerEnabled || !postGranted) {
+                val missing = if (!listenerEnabled && !postGranted) {
+                    "Notification Access & Post Notifications"
+                } else if (!listenerEnabled) {
+                    "Notification Access"
+                } else {
+                    "Post Notifications"
+                }
+                updateStep(
+                    DiagnosticStepId.PERMISSIONS,
+                    StepStatus.ERROR,
+                    com.angelsoft.macmirror.R.string.diag_step1_err,
+                    errorDetail = missing
+                )
+                _diagnosticState.value = _diagnosticState.value.copy(isRunning = false, hasError = true)
+                return@launch
+            }
+            updateStep(DiagnosticStepId.PERMISSIONS, StepStatus.SUCCESS, com.angelsoft.macmirror.R.string.diag_step1_ok)
+
+            // Step 2: Listener Service Active
+            updateStep(DiagnosticStepId.SERVICE_RUNNING, StepStatus.RUNNING)
+            com.angelsoft.macmirror.util.PermissionUtils.rebindNotificationListener(context)
+            kotlinx.coroutines.delay(350)
+
+            val isBound = com.angelsoft.macmirror.service.NotificationListener.isServiceBound.value
+            if (!isBound) {
+                updateStep(
+                    DiagnosticStepId.SERVICE_RUNNING,
+                    StepStatus.ERROR,
+                    com.angelsoft.macmirror.R.string.diag_step2_err
+                )
+                _diagnosticState.value = _diagnosticState.value.copy(isRunning = false, hasError = true)
+                return@launch
+            }
+            updateStep(DiagnosticStepId.SERVICE_RUNNING, StepStatus.SUCCESS, com.angelsoft.macmirror.R.string.diag_step2_ok)
+
+            // Step 3: macOS Reachability
+            updateStep(DiagnosticStepId.MACOS_REACHABILITY, StepStatus.RUNNING)
+            val paired = preferencesManager.isPairedFlow.first()
+            if (!paired) {
+                updateStep(
+                    DiagnosticStepId.MACOS_REACHABILITY,
+                    StepStatus.ERROR,
+                    com.angelsoft.macmirror.R.string.err_no_mac_discovered
+                )
+                _diagnosticState.value = _diagnosticState.value.copy(isRunning = false, hasError = true)
+                return@launch
+            }
+
+            val targetUrl = discoveredServerUrl.value ?: savedServerUrl.value
+            if (targetUrl == null) {
+                updateStep(
+                    DiagnosticStepId.MACOS_REACHABILITY,
+                    StepStatus.ERROR,
+                    com.angelsoft.macmirror.R.string.diag_step3_err
+                )
+                _diagnosticState.value = _diagnosticState.value.copy(isRunning = false, hasError = true)
+                return@launch
+            }
+
+            checkServerStatus(targetUrl)
+            if (!_isServerReachable.value) {
+                updateStep(
+                    DiagnosticStepId.MACOS_REACHABILITY,
+                    StepStatus.ERROR,
+                    com.angelsoft.macmirror.R.string.diag_step3_err
+                )
+                _diagnosticState.value = _diagnosticState.value.copy(isRunning = false, hasError = true)
+                return@launch
+            }
+            updateStep(DiagnosticStepId.MACOS_REACHABILITY, StepStatus.SUCCESS, com.angelsoft.macmirror.R.string.diag_step3_ok)
+
+            // Prepare listening to DiagnosticEvents from NotificationListener before triggering
+            val eventJob = launch {
+                com.angelsoft.macmirror.service.NotificationListener.diagnosticEvents.collect { event ->
+                    when (event) {
+                        is com.angelsoft.macmirror.service.NotificationListener.DiagnosticEvent.NotificationIntercepted -> {
+                            updateStep(DiagnosticStepId.LISTENER_INTERCEPT, StepStatus.SUCCESS, com.angelsoft.macmirror.R.string.diag_step5_ok)
+                            updateStep(DiagnosticStepId.ENCRYPT_AND_SEND, StepStatus.RUNNING)
+                        }
+                        is com.angelsoft.macmirror.service.NotificationListener.DiagnosticEvent.NotificationEncrypted -> {
+                            // encrypting step
+                        }
+                        is com.angelsoft.macmirror.service.NotificationListener.DiagnosticEvent.NotificationSent -> {
+                            updateStep(DiagnosticStepId.ENCRYPT_AND_SEND, StepStatus.SUCCESS, com.angelsoft.macmirror.R.string.diag_step6_ok)
+                            updateStep(DiagnosticStepId.MACOS_ACK, StepStatus.RUNNING)
+                        }
+                        is com.angelsoft.macmirror.service.NotificationListener.DiagnosticEvent.NotificationAckReceived -> {
+                            updateStep(DiagnosticStepId.MACOS_ACK, StepStatus.SUCCESS, com.angelsoft.macmirror.R.string.diag_step7_ok)
+                            _diagnosticState.value = _diagnosticState.value.copy(
+                                isRunning = false,
+                                isCompleted = true,
+                                hasError = false
+                            )
+                        }
+                        is com.angelsoft.macmirror.service.NotificationListener.DiagnosticEvent.NotificationFailed -> {
+                            updateStep(
+                                DiagnosticStepId.ENCRYPT_AND_SEND,
+                                StepStatus.ERROR,
+                                com.angelsoft.macmirror.R.string.diag_step6_err,
+                                errorDetail = event.reason
+                            )
+                            _diagnosticState.value = _diagnosticState.value.copy(isRunning = false, hasError = true)
+                        }
+                    }
+                }
+            }
+
+            // Step 4: Local Test Notification
+            updateStep(DiagnosticStepId.LOCAL_NOTIFICATION, StepStatus.RUNNING)
+            kotlinx.coroutines.delay(200)
+            try {
+                com.angelsoft.macmirror.service.NotificationListener.postTestNotification(context)
+                updateStep(DiagnosticStepId.LOCAL_NOTIFICATION, StepStatus.SUCCESS, com.angelsoft.macmirror.R.string.diag_step4_ok)
+                updateStep(DiagnosticStepId.LISTENER_INTERCEPT, StepStatus.RUNNING)
+            } catch (e: Exception) {
+                updateStep(
+                    DiagnosticStepId.LOCAL_NOTIFICATION,
+                    StepStatus.ERROR,
+                    com.angelsoft.macmirror.R.string.diag_step4_err,
+                    errorDetail = e.localizedMessage
+                )
+                eventJob.cancel()
+                _diagnosticState.value = _diagnosticState.value.copy(isRunning = false, hasError = true)
+                return@launch
+            }
+
+            // Await completion with timeout of 7 seconds
+            val startTime = System.currentTimeMillis()
+            while (System.currentTimeMillis() - startTime < 7000) {
+                if (_diagnosticState.value.isCompleted || _diagnosticState.value.hasError) {
+                    break
+                }
+                kotlinx.coroutines.delay(100)
+            }
+
+            eventJob.cancel()
+
+            if (!_diagnosticState.value.isCompleted && !_diagnosticState.value.hasError) {
+                val current = _diagnosticState.value
+                val pendingOrRunning = current.steps.firstOrNull { it.status == StepStatus.RUNNING || it.status == StepStatus.PENDING }
+                if (pendingOrRunning != null) {
+                    val errRes = if (pendingOrRunning.id == DiagnosticStepId.MACOS_ACK) com.angelsoft.macmirror.R.string.diag_step7_err else com.angelsoft.macmirror.R.string.diag_step5_err
+                    updateStep(pendingOrRunning.id, StepStatus.ERROR, errRes)
+                }
+                _diagnosticState.value = _diagnosticState.value.copy(isRunning = false, hasError = true)
+            }
+        }
+    }
+
+    fun dismissDiagnostic() {
+        diagnosticJob?.cancel()
+        _diagnosticState.value = DiagnosticState()
+    }
+
     fun sendTestNotification(context: android.content.Context) {
         // Ensure the notification listener service is bound and active
         com.angelsoft.macmirror.util.PermissionUtils.rebindNotificationListener(context)
-
-        val notificationManager = context.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
-        
-        val channelName = context.getString(com.angelsoft.macmirror.R.string.test_notification_channel_name)
-        val channelDesc = context.getString(com.angelsoft.macmirror.R.string.test_notification_channel_desc)
-        val title = context.getString(com.angelsoft.macmirror.R.string.test_notification_title)
-        val text = context.getString(com.angelsoft.macmirror.R.string.test_notification_text)
-
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            val channel = android.app.NotificationChannel(
-                "test_channel",
-                channelName,
-                android.app.NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = channelDesc
-            }
-            notificationManager.createNotificationChannel(channel)
-        }
-        
-        val notification = androidx.core.app.NotificationCompat.Builder(context, "test_channel")
-            .setSmallIcon(com.angelsoft.macmirror.R.drawable.ic_notification)
-            .setContentTitle(title)
-            .setContentText(text)
-            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
-            .addExtras(android.os.Bundle().apply {
-                putBoolean("is_test_notification", true)
-            })
-            .build()
-            
-        notificationManager.notify(999, notification)
+        com.angelsoft.macmirror.service.NotificationListener.postTestNotification(context)
     }
 
     sealed interface PairingState {

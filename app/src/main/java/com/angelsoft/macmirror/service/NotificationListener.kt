@@ -4,6 +4,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
@@ -15,22 +16,28 @@ import androidx.core.app.NotificationCompat
 import com.angelsoft.macmirror.MainActivity
 import com.angelsoft.macmirror.R
 import com.angelsoft.macmirror.data.PreferencesManager
+import com.angelsoft.macmirror.network.NsdHelper
 import com.angelsoft.macmirror.security.CryptoManager
+import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import android.content.ComponentName
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.json.JSONObject
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -42,15 +49,62 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
         private const val PERSISTENT_CHANNEL_ID = "macmirror_persistent_service"
         private const val PERSISTENT_NOTIFICATION_ID = 1001
+        const val TEST_NOTIFICATION_ID = 999
 
         private val _isServiceBound = MutableStateFlow(false)
         val isServiceBound: StateFlow<Boolean> = _isServiceBound
+
+        private val _diagnosticEvents = MutableSharedFlow<DiagnosticEvent>(extraBufferCapacity = 64)
+        val diagnosticEvents: SharedFlow<DiagnosticEvent> = _diagnosticEvents
+
+        fun postTestNotification(context: Context) {
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val channelName = context.getString(R.string.test_notification_channel_name)
+            val channelDesc = context.getString(R.string.test_notification_channel_desc)
+            val title = context.getString(R.string.test_notification_title)
+            val text = context.getString(R.string.test_notification_text)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel(
+                    "test_channel",
+                    channelName,
+                    NotificationManager.IMPORTANCE_HIGH
+                ).apply {
+                    description = channelDesc
+                }
+                notificationManager.createNotificationChannel(channel)
+            }
+
+            val notification = NotificationCompat.Builder(context, "test_channel")
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle(title)
+                .setContentText(text)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .addExtras(android.os.Bundle().apply {
+                    putBoolean("is_test_notification", true)
+                })
+                .build()
+
+            notificationManager.notify(TEST_NOTIFICATION_ID, notification)
+        }
+    }
+
+    sealed interface DiagnosticEvent {
+        data class NotificationIntercepted(val notificationId: String, val title: String) : DiagnosticEvent
+        data class NotificationEncrypted(val notificationId: String) : DiagnosticEvent
+        data class NotificationSent(val notificationId: String, val viaWebSocket: Boolean) : DiagnosticEvent
+        data class NotificationAckReceived(val notificationId: String) : DiagnosticEvent
+        data class NotificationFailed(val notificationId: String, val reason: String) : DiagnosticEvent
     }
 
     override fun onListenerConnected() {
         super.onListenerConnected()
         Log.i(TAG, "NotificationListenerService successfully connected to Android system.")
         _isServiceBound.value = true
+        serviceScope.launch {
+            val keepAlive = preferencesManager.keepAlivePersistentServiceFlow.first()
+            updateForegroundService(keepAlive)
+        }
     }
 
     override fun onListenerDisconnected() {
@@ -68,6 +122,7 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
 
     private val preferencesManager: PreferencesManager by inject()
     private val cryptoManager: CryptoManager by inject()
+    private val nsdHelper: NsdHelper by inject()
     private val httpClient = OkHttpClient.Builder()
         .pingInterval(java.time.Duration.ofSeconds(30))
         .build()
@@ -81,6 +136,10 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
     @Volatile
     private var isForegroundActive = false
     private var currentPairedDeviceName: String? = null
+    @Volatile
+    private var currentIsPaired = false
+
+    private val pendingAcks = ConcurrentHashMap<String, CompletableDeferred<Boolean>>()
 
     override fun onCreate() {
         super.onCreate()
@@ -97,8 +156,27 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
                 Triple(paired, keepAlive, deviceName)
             }.collect { (paired, keepAlive, deviceName) ->
                 currentPairedDeviceName = deviceName
-                updateForegroundService(paired && keepAlive)
+                currentIsPaired = paired
+                updateForegroundService(keepAlive)
             }
+        }
+
+        // Background NSD discovery to continuously keep server URL fresh
+        serviceScope.launch {
+            try {
+                nsdHelper.startDiscovery()
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to start NSD discovery in NotificationListener", e)
+            }
+            combine(preferencesManager.isPairedFlow, nsdHelper.resolvedServerUrl) { paired, discoveredUrl ->
+                if (paired && discoveredUrl != null) {
+                    val saved = preferencesManager.serverUrlFlow.first()
+                    if (discoveredUrl != saved) {
+                        Log.i(TAG, "NSD discovered new server URL in background: $discoveredUrl")
+                        preferencesManager.updateServerUrl(discoveredUrl)
+                    }
+                }
+            }.collect {}
         }
 
         // Start watching pairing status, low latency mode, and server url changes
@@ -185,14 +263,18 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
                     put("appIcon", appIconBase64 ?: "")
                 }
 
+                _diagnosticEvents.tryEmit(DiagnosticEvent.NotificationIntercepted(sbn.key, title))
+
                 // Decrypt session key and encrypt payload
                 val sessionKey = cryptoManager.decryptSessionKey(encryptedKey)
                 val encryptedResult = cryptoManager.encryptPayload(payloadJson.toString(), sessionKey)
+                _diagnosticEvents.tryEmit(DiagnosticEvent.NotificationEncrypted(sbn.key))
 
                 // Transmit payload to macOS server
-                sendNotificationToServer(serverUrl, encryptedResult)
+                sendNotificationToServer(serverUrl, encryptedResult, sbn.key)
             } catch (e: Exception) {
                 Log.e(TAG, "Error handling notification posted", e)
+                _diagnosticEvents.tryEmit(DiagnosticEvent.NotificationFailed(sbn.key, e.localizedMessage ?: "Unknown error"))
             }
         }
     }
@@ -215,7 +297,11 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
         }
     }
 
-    private fun sendNotificationToServer(serverUrl: String, encrypted: CryptoManager.EncryptedResult) {
+    private fun sendNotificationToServer(
+        serverUrl: String,
+        encrypted: CryptoManager.EncryptedResult,
+        notificationId: String
+    ) {
         val payloadJson = JSONObject().apply {
             put("iv", encrypted.iv)
             put("ciphertext", encrypted.ciphertext)
@@ -224,19 +310,37 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
         }
 
         // Try to send via WebSocket if connected
-        val sentViaWs = if (isWebSocketConnected) {
-            webSocket?.send(payloadJson.toString()) == true
-        } else {
-            false
-        }
+        val deferredAck = CompletableDeferred<Boolean>()
+        pendingAcks[notificationId] = deferredAck
 
-        if (sentViaWs) {
-            Log.d(TAG, "Notification mirrored successfully via WebSocket")
+        var ackConfirmed = false
+        if (isWebSocketConnected) {
+            val sent = webSocket?.send(payloadJson.toString()) == true
+            if (sent) {
+                _diagnosticEvents.tryEmit(DiagnosticEvent.NotificationSent(notificationId, viaWebSocket = true))
+                Log.d(TAG, "Notification enqueued to WebSocket, waiting up to 3s for ACK...")
+                try {
+                    runBlocking(Dispatchers.IO) {
+                        withTimeout(3000) {
+                            ackConfirmed = deferredAck.await()
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "WebSocket ACK timed out for notification $notificationId. Falling back to HTTP.")
+                    ackConfirmed = false
+                }
+            }
+        }
+        pendingAcks.remove(notificationId)
+
+        if (ackConfirmed) {
+            Log.d(TAG, "Notification mirrored successfully via WebSocket with confirmed ACK")
+            _diagnosticEvents.tryEmit(DiagnosticEvent.NotificationAckReceived(notificationId))
             return
         }
 
         // Fallback to HTTP POST
-        Log.d(TAG, "WebSocket offline or disabled. Falling back to HTTP POST...")
+        Log.d(TAG, "WebSocket offline, timed out, or unconfirmed. Falling back to HTTP POST...")
         val request = Request.Builder()
             .url("$serverUrl/notification")
             .post(payloadJson.toString().toRequestBody(JSON_MEDIA_TYPE))
@@ -251,11 +355,14 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
                         serviceScope.launch {
                             preferencesManager.clearPairing()
                         }
+                        _diagnosticEvents.tryEmit(DiagnosticEvent.NotificationFailed(notificationId, "401 Unauthorized"))
                         return
                     } else if (!response.isSuccessful) {
                         Log.e(TAG, "Notification mirroring request failed via HTTP fallback: code ${response.code}")
                     } else {
                         Log.d(TAG, "Notification mirrored successfully via HTTP fallback: ${response.code}")
+                        _diagnosticEvents.tryEmit(DiagnosticEvent.NotificationSent(notificationId, viaWebSocket = false))
+                        _diagnosticEvents.tryEmit(DiagnosticEvent.NotificationAckReceived(notificationId))
                         delivered = true
                         return
                     }
@@ -269,6 +376,7 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
         }
         if (!delivered) {
             Log.e(TAG, "Failed network delivery of notification via HTTP fallback to $serverUrl")
+            _diagnosticEvents.tryEmit(DiagnosticEvent.NotificationFailed(notificationId, "Network delivery failed"))
         }
     }
 
@@ -301,6 +409,20 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
                     Log.i(TAG, "Server requested unpair via WebSocket. Auto-clearing pairing.")
                     serviceScope.launch {
                         preferencesManager.clearPairing()
+                    }
+                } else if (text.contains("\"action\":\"trigger_test_notification\"")) {
+                    Log.i(TAG, "Server requested trigger_test_notification via WebSocket.")
+                    postTestNotification(this@NotificationListener)
+                } else if (text.contains("\"type\":\"ack\"")) {
+                    try {
+                        val json = JSONObject(text)
+                        val ackId = json.optString("id")
+                        if (ackId.isNotEmpty()) {
+                            pendingAcks[ackId]?.complete(true)
+                            _diagnosticEvents.tryEmit(DiagnosticEvent.NotificationAckReceived(ackId))
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to parse ACK payload", e)
                     }
                 }
             }
@@ -405,10 +527,12 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
 
         val contentText = if (isConnected && !pairedDeviceName.isNullOrBlank()) {
             getString(R.string.persistent_notification_connected, pairedDeviceName)
-        } else if (!pairedDeviceName.isNullOrBlank()) {
-            getString(R.string.persistent_notification_standby, pairedDeviceName)
+        } else if (currentIsPaired && !pairedDeviceName.isNullOrBlank()) {
+            getString(R.string.persistent_notification_searching, pairedDeviceName)
+        } else if (currentIsPaired) {
+            getString(R.string.persistent_notification_standby, "Mac")
         } else {
-            getString(R.string.persistent_notification_waiting)
+            getString(R.string.persistent_notification_unpaired)
         }
 
         return NotificationCompat.Builder(this, PERSISTENT_CHANNEL_ID)
