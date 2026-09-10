@@ -148,7 +148,7 @@
     <string name="diag_step7_title">Confirmación de Entrega en macOS (ACK)</string>
     <string name="diag_step7_ok">Descifrada y mostrada en macOS con éxito</string>
     <string name="diag_step7_err">macOS no confirmó la recepción a tiempo</string>
-    <string name="diag_btn_repeat">Repetir Diagnóstico</string>
+    <string name="diag_btn_repeat">Repetir</string>
     <string name="diag_btn_close">Listo</string>
     <string name="diag_status_testing">Ejecutando diagnóstico del circuito…</string>
     <string name="diag_status_passed">¡Todo funciona correctamente! Tu conexión está saludable.</string>
