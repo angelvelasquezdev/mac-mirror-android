@@ -89,7 +89,8 @@
     <string name="section_about_title">Acerca de</string>
     <string name="section_about_caption">MacMirror vincula tu teléfono Android con tu Mac con elegancia y simplicidad.</string>
     <string name="row_about_app">MacMirror para Android</string>
-    <string name="row_about_version">Versión 1.0 (Build 1)</string>
+    <string name="row_about_version">Versión %1$s (Build %2$s)</string>
+    <string name="version_copied_toast">Detalles de versión y dispositivo copiados al portapapeles</string>
     <string name="row_open_onboarding_title">Ver guía de bienvenida</string>
     <string name="row_open_onboarding_subtitle">Consulta la introducción y el tutorial de permisos</string>
 
