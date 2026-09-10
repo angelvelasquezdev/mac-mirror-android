@@ -120,11 +120,15 @@ Puedes abrir la carpeta del proyecto en **Android Studio** o ejecutar en la term
 
 ## 🗺️ Hoja de Ruta (Roadmap)
 
-- [ ] 🔘 Quick Settings Tile en Android (`TileService`) para activar/desactivar el servicio con un toque.
-- [ ] 🔋 Telemetría en tiempo real del porcentaje de batería y estado de carga hacia el Mac.
-- [ ] 🚫 Silenciar o excluir apps específicas en `AppsScreen.kt`.
-- [ ] 🌐 Nuevas traducciones (Francés, Alemán, Portugués, Italiano, Japonés).
-- [ ] 📋 Sincronización segura del portapapeles local.
+- [ ] 🔘 Quick Settings Tile en Android (`TileService`) para activar/desactivar el servicio con un toque ([#2](https://github.com/angelvelasquezdev/mac-mirror-android/issues/2)).
+- [ ] 🔋 Telemetría en tiempo real del porcentaje de batería y estado de carga hacia el Mac ([#3](https://github.com/angelvelasquezdev/mac-mirror-android/issues/3)).
+- [ ] 🚫 Silenciar o excluir apps específicas en `AppsScreen.kt` ([#4](https://github.com/angelvelasquezdev/mac-mirror-android/issues/4)).
+- [ ] 💬 Respuestas rápidas y ejecución remota de acciones de notificaciones ([#8](https://github.com/angelvelasquezdev/mac-mirror-android/issues/8)).
+- [ ] 📋 Sincronización segura del portapapeles local ([#9](https://github.com/angelvelasquezdev/mac-mirror-android/issues/9)).
+- [ ] 🎵 Transmisión de metadatos multimedia y controles de reproducción remotos ([#10](https://github.com/angelvelasquezdev/mac-mirror-android/issues/10)).
+- [ ] 🔄 Reconexión automática al cambiar de red Wi-Fi ([#11](https://github.com/angelvelasquezdev/mac-mirror-android/issues/11)).
+- [ ] 🖥️ Soporte para emparejar con múltiples Macs ([#12](https://github.com/angelvelasquezdev/mac-mirror-android/issues/12)).
+- [ ] 🌐 Nuevas traducciones (Francés, Alemán, Portugués, Italiano, Japonés) ([#5](https://github.com/angelvelasquezdev/mac-mirror-android/issues/5)).
 
 ---
 

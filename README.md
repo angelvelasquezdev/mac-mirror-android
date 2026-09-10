@@ -119,11 +119,15 @@ You can open the project in **Android Studio** or build from the command line:
 
 ## 🗺️ Roadmap
 
-- [ ] 🔘 Android Quick Settings Tile (`TileService`) for one-tap service toggling.
-- [ ] 🔋 Real-time battery status and charging telemetry in companion payload.
-- [ ] 🚫 Per-app notification blacklisting / mute toggles in `AppsScreen.kt`.
-- [ ] 🌐 Expand localizations (French, German, Portuguese, Italian, Japanese).
-- [ ] 📋 Secure local clipboard synchronization.
+- [ ] 🔘 Android Quick Settings Tile (`TileService`) for one-tap service toggling ([#2](https://github.com/angelvelasquezdev/mac-mirror-android/issues/2)).
+- [ ] 🔋 Real-time battery status and charging telemetry in companion payload ([#3](https://github.com/angelvelasquezdev/mac-mirror-android/issues/3)).
+- [ ] 🚫 Per-app notification blacklisting / mute toggles in `AppsScreen.kt` ([#4](https://github.com/angelvelasquezdev/mac-mirror-android/issues/4)).
+- [ ] 💬 Inline quick replies and remote actions execution ([#8](https://github.com/angelvelasquezdev/mac-mirror-android/issues/8)).
+- [ ] 📋 Secure local clipboard synchronization ([#9](https://github.com/angelvelasquezdev/mac-mirror-android/issues/9)).
+- [ ] 🎵 Stream active media playback metadata & remote control commands ([#10](https://github.com/angelvelasquezdev/mac-mirror-android/issues/10)).
+- [ ] 🔄 Auto-reconnect on Wi-Fi network change ([#11](https://github.com/angelvelasquezdev/mac-mirror-android/issues/11)).
+- [ ] 🖥️ Multi-Mac pairing management ([#12](https://github.com/angelvelasquezdev/mac-mirror-android/issues/12)).
+- [ ] 🌐 Expand localizations (French, German, Portuguese, Italian, Japanese) ([#5](https://github.com/angelvelasquezdev/mac-mirror-android/issues/5)).
 
 ---
 
