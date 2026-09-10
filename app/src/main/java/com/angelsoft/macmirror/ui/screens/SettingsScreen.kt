@@ -1,5 +1,11 @@
 package com.angelsoft.macmirror.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -49,6 +55,29 @@ fun SettingsScreen(
     val isBatteryOptimizationIgnored by viewModel.isBatteryOptimizationIgnored.collectAsState()
     val themeMode by viewModel.themeMode.collectAsState()
     val scrollState = rememberScrollState()
+
+    val (versionName, versionCode) = remember(context) {
+        try {
+            val pInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getPackageInfo(
+                    context.packageName,
+                    PackageManager.PackageInfoFlags.of(0)
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getPackageInfo(context.packageName, 0)
+            }
+            val code = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                pInfo.longVersionCode.toString()
+            } else {
+                @Suppress("DEPRECATION")
+                pInfo.versionCode.toString()
+            }
+            (pInfo.versionName ?: "1.0") to code
+        } catch (e: Exception) {
+            "1.0" to "1"
+        }
+    }
 
     val postNotificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -248,9 +277,24 @@ fun SettingsScreen(
                 }
                 CupertinoRow(
                     title = stringResource(R.string.row_about_app),
-                    subtitle = stringResource(R.string.row_about_version),
+                    subtitle = stringResource(R.string.row_about_version, versionName, versionCode),
                     icon = Icons.Default.Info,
-                    iconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    onClick = {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                        val debugInfo = """
+                            MacMirror Android v$versionName (Build $versionCode)
+                            Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})
+                            ${Build.MANUFACTURER} ${Build.MODEL}
+                        """.trimIndent()
+                        val clip = ClipData.newPlainText("MacMirror Version", debugInfo)
+                        clipboard?.setPrimaryClip(clip)
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.version_copied_toast),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 )
             }
 
