@@ -1,5 +1,7 @@
 package com.angelsoft.macmirror.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -47,6 +49,15 @@ fun SettingsScreen(
     val isBatteryOptimizationIgnored by viewModel.isBatteryOptimizationIgnored.collectAsState()
     val themeMode by viewModel.themeMode.collectAsState()
     val scrollState = rememberScrollState()
+
+    val postNotificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            if (isGranted) {
+                viewModel.toggleKeepAlivePersistentService(true)
+            }
+        }
+    )
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -145,7 +156,25 @@ fun SettingsScreen(
                     trailingContent = {
                         CupertinoSwitch(
                             checked = keepAlivePersistentService,
-                            onCheckedChange = { viewModel.toggleKeepAlivePersistentService(it) }
+                            onCheckedChange = { enable ->
+                                if (enable) {
+                                    if (android.os.Build.VERSION.SDK_INT >= 33) {
+                                        val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+                                            context,
+                                            android.Manifest.permission.POST_NOTIFICATIONS
+                                        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                                        if (hasPermission) {
+                                            viewModel.toggleKeepAlivePersistentService(true)
+                                        } else {
+                                            postNotificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                                        }
+                                    } else {
+                                        viewModel.toggleKeepAlivePersistentService(true)
+                                    }
+                                } else {
+                                    viewModel.toggleKeepAlivePersistentService(false)
+                                }
+                            }
                         )
                     }
                 )
@@ -163,7 +192,20 @@ fun SettingsScreen(
                     trailingContent = {
                         CupertinoSwitch(
                             checked = lowLatencyMode,
-                            onCheckedChange = { viewModel.toggleLowLatencyMode(it) }
+                            onCheckedChange = { enable ->
+                                if (enable) {
+                                    if (android.os.Build.VERSION.SDK_INT >= 33) {
+                                        val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+                                            context,
+                                            android.Manifest.permission.POST_NOTIFICATIONS
+                                        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                                        if (!hasPermission) {
+                                            postNotificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                                        }
+                                    }
+                                }
+                                viewModel.toggleLowLatencyMode(enable)
+                            }
                         )
                     }
                 )

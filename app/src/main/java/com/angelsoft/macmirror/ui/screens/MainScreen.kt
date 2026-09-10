@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -67,12 +68,13 @@ fun MainScreen(
     val savedServerUrl by viewModel.savedServerUrl.collectAsState()
     val discoveredServerUrl by viewModel.discoveredServerUrl.collectAsState()
     val pairingState by viewModel.pairingState.collectAsState()
+    val diagnosticState by viewModel.diagnosticState.collectAsState()
 
     val postNotificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
             if (isGranted) {
-                viewModel.sendTestNotification(context)
+                viewModel.runDiagnosticTest(context)
             }
         }
     )
@@ -357,20 +359,7 @@ fun MainScreen(
                     AppleButton(
                         text = stringResource(R.string.btn_send_test_notification),
                         onClick = {
-                            if (android.os.Build.VERSION.SDK_INT >= 33) {
-                                val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(
-                                    context,
-                                    android.Manifest.permission.POST_NOTIFICATIONS
-                                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-
-                                if (hasPermission) {
-                                    viewModel.sendTestNotification(context)
-                                } else {
-                                    postNotificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                                }
-                            } else {
-                                viewModel.sendTestNotification(context)
-                            }
+                            viewModel.runDiagnosticTest(context)
                         },
                         isPrimary = true
                     )
@@ -625,6 +614,250 @@ fun MainScreen(
             shape = RoundedCornerShape(20.dp),
             containerColor = MaterialTheme.colorScheme.surface
         )
+    }
+
+    // Interactive Diagnostic Modal BottomSheet
+    if (diagnosticState.isVisible) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { viewModel.dismissDiagnostic() },
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+            dragHandle = { BottomSheetDefaults.DragHandle() }
+        ) {
+            DiagnosticBottomSheetContent(
+                diagnosticState = diagnosticState,
+                onRepeat = { viewModel.runDiagnosticTest(context) },
+                onClose = { viewModel.dismissDiagnostic() },
+                onFixPermissions = {
+                    if (!PermissionUtils.isNotificationServiceEnabled(context)) {
+                        context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        })
+                    } else if (android.os.Build.VERSION.SDK_INT >= 33) {
+                        postNotificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun DiagnosticBottomSheetContent(
+    diagnosticState: MainViewModel.DiagnosticState,
+    onRepeat: () -> Unit,
+    onClose: () -> Unit,
+    onFixPermissions: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Header
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = stringResource(R.string.diag_title),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = stringResource(R.string.diag_subtitle),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        // Card with 7 Steps
+        CupertinoCard(cornerRadius = 18.dp) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                diagnosticState.steps.forEachIndexed { index, step ->
+                    val showDivider = index < diagnosticState.steps.size - 1
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        // Status Icon
+                        Box(
+                            modifier = Modifier.size(24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            when (step.status) {
+                                MainViewModel.StepStatus.PENDING -> {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(10.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.outlineVariant)
+                                    )
+                                }
+                                MainViewModel.StepStatus.RUNNING -> {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(18.dp),
+                                        strokeWidth = 2.dp,
+                                        color = AppleBlue
+                                    )
+                                }
+                                MainViewModel.StepStatus.SUCCESS -> {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = AppleGreen,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                MainViewModel.StepStatus.ERROR -> {
+                                    Icon(
+                                        imageVector = Icons.Default.Warning,
+                                        contentDescription = null,
+                                        tint = AppleRed,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        // Step Titles
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(step.titleResId),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            val detailText = when (step.status) {
+                                MainViewModel.StepStatus.SUCCESS -> step.detailResId?.let { stringResource(it) }
+                                MainViewModel.StepStatus.ERROR -> step.errorDetail ?: step.detailResId?.let { stringResource(it) }
+                                else -> null
+                            }
+                            if (detailText != null) {
+                                val detailColor = if (step.status == MainViewModel.StepStatus.SUCCESS) AppleGreen else AppleRed
+                                Text(
+                                    text = detailText,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = detailColor,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+
+                        // Actionable button if permission error
+                        if (step.id == MainViewModel.DiagnosticStepId.PERMISSIONS && step.status == MainViewModel.StepStatus.ERROR) {
+                            TextButton(
+                                onClick = onFixPermissions,
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.btn_retry),
+                                    color = AppleBlue,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
+
+                    if (showDivider) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(start = 54.dp),
+                            thickness = 0.5.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+                    }
+                }
+            }
+        }
+
+        // Summary Banner
+        val summaryBgColor = when {
+            diagnosticState.isRunning -> AppleBlue.copy(alpha = 0.12f)
+            diagnosticState.isCompleted && !diagnosticState.hasError -> AppleGreen.copy(alpha = 0.12f)
+            diagnosticState.hasError -> AppleRed.copy(alpha = 0.12f)
+            else -> Color.Transparent
+        }
+        val summaryContentColor = when {
+            diagnosticState.isRunning -> AppleBlue
+            diagnosticState.isCompleted && !diagnosticState.hasError -> AppleGreen
+            diagnosticState.hasError -> AppleRed
+            else -> MaterialTheme.colorScheme.onSurface
+        }
+        val summaryText = when {
+            diagnosticState.isRunning -> stringResource(R.string.diag_status_testing)
+            diagnosticState.isCompleted && !diagnosticState.hasError -> stringResource(R.string.diag_status_passed)
+            diagnosticState.hasError -> stringResource(R.string.diag_status_failed)
+            else -> ""
+        }
+
+        if (summaryText.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(summaryBgColor)
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                if (diagnosticState.isRunning) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color = summaryContentColor
+                    )
+                } else if (diagnosticState.isCompleted && !diagnosticState.hasError) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = summaryContentColor,
+                        modifier = Modifier.size(18.dp)
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = summaryContentColor,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                Text(
+                    text = summaryText,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium,
+                    color = summaryContentColor
+                )
+            }
+        }
+
+        // Action Buttons
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(modifier = Modifier.weight(1f)) {
+                AppleButton(
+                    text = stringResource(R.string.diag_btn_repeat),
+                    onClick = onRepeat,
+                    isPrimary = diagnosticState.isCompleted || diagnosticState.hasError
+                )
+            }
+            Box(modifier = Modifier.weight(1f)) {
+                AppleButton(
+                    text = stringResource(R.string.diag_btn_close),
+                    onClick = onClose,
+                    isPrimary = false
+                )
+            }
+        }
     }
 }
 

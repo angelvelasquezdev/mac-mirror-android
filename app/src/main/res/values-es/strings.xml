@@ -123,4 +123,35 @@
     <string name="row_battery_optimization_title">Ahorro de Batería</string>
     <string name="battery_status_unrestricted">Sin restricciones (Entrega inmediata)</string>
     <string name="battery_status_optimized">Optimizado (Puede haber retrasos)</string>
+    <!-- Diagnostic Test Modal -->
+    <string name="diag_title">Diagnóstico de Conexión</string>
+    <string name="diag_subtitle">Comprobando todo el circuito de entrega de notificaciones</string>
+    <string name="diag_step1_title">Permisos del Sistema</string>
+    <string name="diag_step1_ok">Permisos de notificación y listener concedidos</string>
+    <string name="diag_step1_err">Faltan permisos requeridos (toca para corregir)</string>
+    <string name="diag_step2_title">Servicio Listener en Segundo Plano</string>
+    <string name="diag_step2_ok">NotificationListenerService vinculado y activo</string>
+    <string name="diag_step2_err">El servicio no está vinculado por el sistema Android</string>
+    <string name="diag_step3_title">Conectividad con macOS</string>
+    <string name="diag_step3_ok">Servidor macOS alcanzable y canal de comunicación listo</string>
+    <string name="diag_step3_err">El servidor macOS es inalcanzable en la red local</string>
+    <string name="diag_step4_title">Notificación Local de Prueba</string>
+    <string name="diag_step4_ok">Notificación estándar del sistema publicada localmente</string>
+    <string name="diag_step4_err">Error al publicar la notificación en el sistema</string>
+    <string name="diag_step5_title">Intercepción por el Listener</string>
+    <string name="diag_step5_ok">Notificación capturada por el listener de MacMirror</string>
+    <string name="diag_step5_err">El listener no pudo capturar la notificación</string>
+    <string name="diag_step6_title">Transmisión Cifrada</string>
+    <string name="diag_step6_ok">Cifrada con AES-256-GCM y transmitida por red</string>
+    <string name="diag_step6_err">Fallo en la transmisión de red</string>
+    <string name="diag_step7_title">Confirmación de Entrega en macOS (ACK)</string>
+    <string name="diag_step7_ok">Descifrada y mostrada en macOS con éxito</string>
+    <string name="diag_step7_err">macOS no confirmó la recepción a tiempo</string>
+    <string name="diag_btn_repeat">Repetir Diagnóstico</string>
+    <string name="diag_btn_close">Listo</string>
+    <string name="diag_status_testing">Ejecutando diagnóstico del circuito…</string>
+    <string name="diag_status_passed">¡Todo funciona correctamente! Tu conexión está saludable.</string>
+    <string name="diag_status_failed">El diagnóstico falló. Consulta los detalles abajo.</string>
+    <string name="persistent_notification_unpaired">MacMirror activo • Esperando vinculación</string>
+    <string name="persistent_notification_searching">MacMirror activo • Buscando a %s…</string>
 </resources>
