@@ -148,7 +148,7 @@
     <string name="diag_step7_title">macOS Delivery Confirmation (ACK)</string>
     <string name="diag_step7_ok">Decrypted and displayed on macOS successfully</string>
     <string name="diag_step7_err">macOS did not confirm receipt within timeout</string>
-    <string name="diag_btn_repeat">Repeat Diagnostic</string>
+    <string name="diag_btn_repeat">Repeat</string>
     <string name="diag_btn_close">Done</string>
     <string name="diag_status_testing">Running diagnostic pipeline…</string>
     <string name="diag_status_passed">Everything is working! Your connection is healthy.</string>

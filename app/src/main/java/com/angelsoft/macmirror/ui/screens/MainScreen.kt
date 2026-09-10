@@ -847,7 +847,8 @@ fun DiagnosticBottomSheetContent(
                 AppleButton(
                     text = stringResource(R.string.diag_btn_repeat),
                     onClick = onRepeat,
-                    isPrimary = diagnosticState.isCompleted || diagnosticState.hasError
+                    isPrimary = diagnosticState.isCompleted || diagnosticState.hasError,
+                    leadingIcon = Icons.Default.Refresh
                 )
             }
             Box(modifier = Modifier.weight(1f)) {

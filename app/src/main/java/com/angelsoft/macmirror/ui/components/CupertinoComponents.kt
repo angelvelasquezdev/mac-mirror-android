@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -255,7 +256,8 @@ fun AppleButton(
         },
         modifier = modifier
             .fillMaxWidth()
-            .height(50.dp),
+            .defaultMinSize(minHeight = 50.dp),
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
         enabled = enabled,
         shape = RoundedCornerShape(14.dp),
         colors = ButtonDefaults.buttonColors(
@@ -280,7 +282,9 @@ fun AppleButton(
             Text(
                 text = text,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
