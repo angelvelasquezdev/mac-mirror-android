@@ -1,11 +1,20 @@
 package com.angelsoft.macmirror.ui
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.util.Base64
 import android.util.Log
+import androidx.core.app.NotificationCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.angelsoft.macmirror.R
 import com.angelsoft.macmirror.data.PreferencesManager
+import com.angelsoft.macmirror.network.CompatibilityManager
 import com.angelsoft.macmirror.network.NsdHelper
 import com.angelsoft.macmirror.security.CryptoManager
 import kotlinx.coroutines.Dispatchers
@@ -28,7 +37,8 @@ import org.json.JSONObject
 class MainViewModel(
     private val preferencesManager: PreferencesManager,
     private val cryptoManager: CryptoManager,
-    val nsdHelper: NsdHelper
+    val nsdHelper: NsdHelper,
+    private val context: Context? = null
 ) : ViewModel() {
 
     companion object {
@@ -64,6 +74,13 @@ class MainViewModel(
 
     private val _listenerRebindAttempts = MutableStateFlow(0)
     val listenerRebindAttempts: StateFlow<Int> = _listenerRebindAttempts
+
+    private val _companionCompatibilityWarning = MutableStateFlow<String?>(null)
+    val companionCompatibilityWarning: StateFlow<String?> = _companionCompatibilityWarning
+
+    fun dismissCompatibilityWarning() {
+        _companionCompatibilityWarning.value = null
+    }
 
     fun refreshBatteryOptimizationStatus(context: Context) {
         _isBatteryOptimizationIgnored.value = com.angelsoft.macmirror.util.PermissionUtils.isBatteryOptimizationIgnored(context)
@@ -174,6 +191,8 @@ class MainViewModel(
         val initiateJson = JSONObject().apply {
             put("client_ephemeral_pub_key", publicKeyBase64)
             put("device_name", android.os.Build.MODEL)
+            put("protocol_version", CompatibilityManager.CURRENT_PROTOCOL_VERSION)
+            put("app_version", CompatibilityManager.currentAppVersion)
         }
 
         val request = Request.Builder()
@@ -191,6 +210,17 @@ class MainViewModel(
         val responseJson = JSONObject(responseBody)
         val serverPublicKeyBase64 = responseJson.getString("server_ephemeral_pub_key")
         val serverDeviceName = responseJson.optString("device_name", "macOS Device")
+        val serverProtocol = if (responseJson.has("protocol_version")) responseJson.getInt("protocol_version") else null
+        val serverAppVersion = responseJson.optString("app_version").takeIf { it.isNotBlank() }
+
+        val compatResult = CompatibilityManager.checkCompatibility(serverProtocol, serverAppVersion)
+        if (compatResult.requiresCompanionUpdate) {
+            Log.w(TAG, "Companion macOS requires update: $serverAppVersion (protocol $serverProtocol)")
+            _companionCompatibilityWarning.value = compatResult.peerAppVersion
+            context?.let { notifyCompanionIncompatibility(it, compatResult.peerAppVersion) }
+        } else {
+            _companionCompatibilityWarning.value = null
+        }
 
         val serverPublicKeyBytes = Base64.decode(serverPublicKeyBase64, Base64.NO_WRAP)
 
@@ -252,6 +282,7 @@ class MainViewModel(
             }
             preferencesManager.clearPairing()
             _isServerReachable.value = false
+            _companionCompatibilityWarning.value = null
             _pairingState.value = PairingState.Idle
         }
     }
@@ -260,6 +291,8 @@ class MainViewModel(
         try {
             val request = Request.Builder()
                 .url("$serverUrl/status")
+                .addHeader("X-Protocol-Version", CompatibilityManager.CURRENT_PROTOCOL_VERSION.toString())
+                .addHeader("X-App-Version", CompatibilityManager.currentAppVersion)
                 .get()
                 .build()
             httpClient.newCall(request).execute().use { response ->
@@ -268,6 +301,20 @@ class MainViewModel(
                     if (body != null) {
                         val json = JSONObject(body)
                         val serverPaired = json.optBoolean("paired", false)
+                        val serverProtocol = if (json.has("protocol_version")) json.getInt("protocol_version") else null
+                        val serverAppVersion = json.optString("app_version").takeIf { it.isNotBlank() }
+
+                        val compatResult = CompatibilityManager.checkCompatibility(serverProtocol, serverAppVersion)
+                        if (compatResult.requiresCompanionUpdate) {
+                            Log.w(TAG, "Companion macOS requires update: $serverAppVersion (protocol $serverProtocol)")
+                            if (_companionCompatibilityWarning.value == null) {
+                                context?.let { notifyCompanionIncompatibility(it, compatResult.peerAppVersion) }
+                            }
+                            _companionCompatibilityWarning.value = compatResult.peerAppVersion
+                        } else {
+                            _companionCompatibilityWarning.value = null
+                        }
+
                         if (!serverPaired) {
                             Log.i(TAG, "Server reports it is not paired. Auto-clearing local pairing.")
                             preferencesManager.clearPairing()
@@ -289,6 +336,47 @@ class MainViewModel(
         } catch (e: Exception) {
             _isServerReachable.value = false
             Log.w(TAG, "Could not check server status at $serverUrl: ${e.message}")
+        }
+    }
+
+    fun notifyCompanionIncompatibility(ctx: Context, companionVersion: String) {
+        try {
+            val notificationManager = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
+            val channelId = "macmirror_compat_channel"
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel(
+                    channelId,
+                    ctx.getString(R.string.compat_notification_title),
+                    NotificationManager.IMPORTANCE_HIGH
+                )
+                notificationManager.createNotificationChannel(channel)
+            }
+
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(CompatibilityManager.MACOS_RELEASES_URL)).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            val pendingIntent = PendingIntent.getActivity(
+                ctx,
+                888,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val notification = NotificationCompat.Builder(ctx, channelId)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle(ctx.getString(R.string.compat_notification_title))
+                .setContentText(ctx.getString(R.string.compat_warning_desc_macos_update, companionVersion))
+                .setStyle(NotificationCompat.BigTextStyle().bigText(
+                    ctx.getString(R.string.compat_warning_desc_macos_update, companionVersion)
+                ))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .build()
+
+            notificationManager.notify(888, notification)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to post companion incompatibility notification", e)
         }
     }
 

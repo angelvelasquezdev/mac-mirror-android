@@ -157,4 +157,11 @@
     <string name="diag_status_failed">Diagnostic failed. See details below.</string>
     <string name="persistent_notification_unpaired">MacMirror active • Waiting for pairing</string>
     <string name="persistent_notification_searching">MacMirror active • Searching for %s…</string>
+
+    <!-- Compatibility & Backwards Compatibility -->
+    <string name="compat_warning_title">Companion Update Required</string>
+    <string name="compat_warning_desc_macos_update">Your Mac is running MacMirror %s, which requires an update to remain compatible with this version.</string>
+    <string name="compat_action_update">Update Mac App</string>
+    <string name="compat_notification_title">MacMirror: macOS Update Required</string>
+    <string name="compat_notification_text">The paired Mac requires a MacMirror update to remain compatible.</string>
 </resources>

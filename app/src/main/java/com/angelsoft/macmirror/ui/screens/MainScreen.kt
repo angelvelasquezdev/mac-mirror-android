@@ -39,13 +39,16 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import android.net.Uri
 import com.angelsoft.macmirror.R
+import com.angelsoft.macmirror.network.CompatibilityManager
 import com.angelsoft.macmirror.ui.MainViewModel
 import com.angelsoft.macmirror.ui.components.AppleButton
 import com.angelsoft.macmirror.ui.components.CupertinoCard
 import com.angelsoft.macmirror.ui.components.CupertinoRow
 import com.angelsoft.macmirror.ui.components.CupertinoSection
 import com.angelsoft.macmirror.ui.components.PinInputView
+import com.angelsoft.macmirror.ui.theme.AppleAmber
 import com.angelsoft.macmirror.ui.theme.AppleBlue
 import com.angelsoft.macmirror.ui.theme.AppleGreen
 import com.angelsoft.macmirror.ui.theme.AppleRed
@@ -70,6 +73,7 @@ fun MainScreen(
     val pairingState by viewModel.pairingState.collectAsState()
     val diagnosticState by viewModel.diagnosticState.collectAsState()
     val listenerRebindAttempts by viewModel.listenerRebindAttempts.collectAsState()
+    val companionWarning by viewModel.companionCompatibilityWarning.collectAsState()
 
     val postNotificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -186,6 +190,69 @@ fun MainScreen(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+
+            // Companion Incompatibility Warning Banner
+            AnimatedVisibility(
+                visible = companionWarning != null,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                companionWarning?.let { companionVer ->
+                    CupertinoCard(cornerRadius = 20.dp) {
+                        Column(
+                            modifier = Modifier.padding(18.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .clip(CircleShape)
+                                        .background(AppleAmber.copy(alpha = 0.15f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Warning,
+                                        contentDescription = null,
+                                        tint = AppleAmber,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(R.string.compat_warning_title),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.compat_warning_desc_macos_update, companionVer),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        lineHeight = 18.sp
+                                    )
+                                }
+                            }
+
+                            AppleButton(
+                                text = stringResource(R.string.compat_action_update),
+                                onClick = {
+                                    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(CompatibilityManager.MACOS_RELEASES_URL)).apply {
+                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                    }
+                                    context.startActivity(browserIntent)
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                isPrimary = true
+                            )
+                        }
+                    }
+                }
+            }
 
             // 1. Friendly Privacy & Permission Card (Auto-hides as soon as permission is granted)
             AnimatedVisibility(

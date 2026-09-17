@@ -157,4 +157,11 @@
     <string name="diag_status_failed">El diagnóstico falló. Consulta los detalles abajo.</string>
     <string name="persistent_notification_unpaired">MacMirror activo • Esperando vinculación</string>
     <string name="persistent_notification_searching">MacMirror activo • Buscando a %s…</string>
+
+    <!-- Compatibilidad y Retrocompatibilidad -->
+    <string name="compat_warning_title">Actualización requerida en Mac</string>
+    <string name="compat_warning_desc_macos_update">Tu Mac tiene MacMirror %s, que requiere una actualización para mantener la compatibilidad con esta versión.</string>
+    <string name="compat_action_update">Actualizar app de Mac</string>
+    <string name="compat_notification_title">MacMirror: Actualización requerida en Mac</string>
+    <string name="compat_notification_text">La Mac vinculada requiere actualizar MacMirror para mantener la compatibilidad.</string>
 </resources>

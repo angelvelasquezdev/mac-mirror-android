@@ -13,6 +13,6 @@ val appModule = module {
     single { CryptoManager(androidContext()) }
     single { PreferencesManager(androidContext()) }
     single { NsdHelper(androidContext()) }
-    viewModel { MainViewModel(get(), get(), get()) }
+    viewModel { MainViewModel(get(), get(), get(), androidContext()) }
     viewModel { SettingsViewModel(androidContext(), get()) }
 }
