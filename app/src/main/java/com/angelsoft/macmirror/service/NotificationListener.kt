@@ -54,6 +54,11 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
         private val _isServiceBound = MutableStateFlow(false)
         val isServiceBound: StateFlow<Boolean> = _isServiceBound
 
+        @androidx.annotation.VisibleForTesting
+        fun setServiceBoundForTesting(bound: Boolean) {
+            _isServiceBound.value = bound
+        }
+
         private val _diagnosticEvents = MutableSharedFlow<DiagnosticEvent>(extraBufferCapacity = 64)
         val diagnosticEvents: SharedFlow<DiagnosticEvent> = _diagnosticEvents
 

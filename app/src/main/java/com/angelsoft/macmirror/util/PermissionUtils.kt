@@ -115,4 +115,62 @@ object PermissionUtils {
             }
         }
     }
+
+    /**
+     * Forces the Android system to reconnect and rebind NotificationListenerService.
+     * Performs requestRebind AND toggles the PackageManager component state
+     * (DISABLED -> ENABLED with DONT_KILL_APP).
+     * This signals system_server's PackageMonitor to re-register the listener service
+     * even when the service was dropped due to OEM aggressive battery management or system restart.
+     */
+    fun forceRebindNotificationListener(context: Context) {
+        if (!isNotificationServiceEnabled(context)) {
+            android.util.Log.w("PermissionUtils", "Notification service access not granted; skipping force rebind.")
+            return
+        }
+
+        val componentName = ComponentName(context, NotificationListener::class.java)
+
+        // Step 1: Standard AOSP requestRebind
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            try {
+                android.service.notification.NotificationListenerService.requestRebind(componentName)
+                android.util.Log.d("PermissionUtils", "requestRebind attempted.")
+            } catch (e: Exception) {
+                android.util.Log.w("PermissionUtils", "requestRebind threw exception: ${e.message}")
+            }
+        }
+
+        // Step 2: Component toggle cycle to trigger system_server PackageMonitor
+        try {
+            val pm = context.packageManager
+            pm.setComponentEnabledSetting(
+                componentName,
+                android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                android.content.pm.PackageManager.DONT_KILL_APP
+            )
+            pm.setComponentEnabledSetting(
+                componentName,
+                android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                android.content.pm.PackageManager.DONT_KILL_APP
+            )
+            android.util.Log.i("PermissionUtils", "Successfully toggled NotificationListener component to force system rebind.")
+        } catch (e: Exception) {
+            android.util.Log.e("PermissionUtils", "Failed to toggle NotificationListener component in PackageManager", e)
+        }
+    }
+
+    /**
+     * Directly opens the Android System settings screen for Notification Listener / Access.
+     */
+    fun openNotificationListenerSettings(context: Context) {
+        try {
+            val intent = android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).apply {
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            android.util.Log.e("PermissionUtils", "Failed to open notification listener settings", e)
+        }
+    }
 }

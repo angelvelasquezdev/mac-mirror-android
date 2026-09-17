@@ -9,12 +9,14 @@ import com.angelsoft.macmirror.data.PreferencesManager
 import com.angelsoft.macmirror.network.NsdHelper
 import com.angelsoft.macmirror.security.CryptoManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -60,6 +62,9 @@ class MainViewModel(
     private val _isBatteryOptimizationIgnored = MutableStateFlow(true)
     val isBatteryOptimizationIgnored: StateFlow<Boolean> = _isBatteryOptimizationIgnored
 
+    private val _listenerRebindAttempts = MutableStateFlow(0)
+    val listenerRebindAttempts: StateFlow<Int> = _listenerRebindAttempts
+
     fun refreshBatteryOptimizationStatus(context: Context) {
         _isBatteryOptimizationIgnored.value = com.angelsoft.macmirror.util.PermissionUtils.isBatteryOptimizationIgnored(context)
     }
@@ -93,7 +98,7 @@ class MainViewModel(
 
         // Periodic reachability heartbeat every 8 seconds when paired
         viewModelScope.launch {
-            while (true) {
+            while (isActive) {
                 kotlinx.coroutines.delay(8000)
                 val paired = preferencesManager.isPairedFlow.first()
                 if (paired) {
@@ -104,6 +109,11 @@ class MainViewModel(
                 }
             }
         }
+    }
+
+    @androidx.annotation.VisibleForTesting
+    fun cancelCoroutinesForTesting() {
+        viewModelScope.coroutineContext[kotlinx.coroutines.Job]?.cancelChildren()
     }
 
     override fun onCleared() {
@@ -398,10 +408,14 @@ class MainViewModel(
 
             // Step 2: Listener Service Active
             updateStep(DiagnosticStepId.SERVICE_RUNNING, StepStatus.RUNNING)
-            com.angelsoft.macmirror.util.PermissionUtils.rebindNotificationListener(context)
-            kotlinx.coroutines.delay(350)
+            var isBound = com.angelsoft.macmirror.service.NotificationListener.isServiceBound.value
+            if (!isBound) {
+                com.angelsoft.macmirror.util.PermissionUtils.forceRebindNotificationListener(context)
+                isBound = kotlinx.coroutines.withTimeoutOrNull(2500) {
+                    com.angelsoft.macmirror.service.NotificationListener.isServiceBound.first { it }
+                } ?: false
+            }
 
-            val isBound = com.angelsoft.macmirror.service.NotificationListener.isServiceBound.value
             if (!isBound) {
                 updateStep(
                     DiagnosticStepId.SERVICE_RUNNING,
@@ -411,6 +425,7 @@ class MainViewModel(
                 _diagnosticState.value = _diagnosticState.value.copy(isRunning = false, hasError = true)
                 return@launch
             }
+            _listenerRebindAttempts.value = 0
             updateStep(DiagnosticStepId.SERVICE_RUNNING, StepStatus.SUCCESS, com.angelsoft.macmirror.R.string.diag_step2_ok)
 
             // Step 3: macOS Reachability
@@ -529,12 +544,27 @@ class MainViewModel(
 
     fun dismissDiagnostic() {
         diagnosticJob?.cancel()
+        _listenerRebindAttempts.value = 0
         _diagnosticState.value = DiagnosticState()
+    }
+
+    fun handleServiceRunningAction(context: Context) {
+        if (_listenerRebindAttempts.value == 0) {
+            _listenerRebindAttempts.value += 1
+            com.angelsoft.macmirror.util.PermissionUtils.forceRebindNotificationListener(context)
+            runDiagnosticTest(context)
+        } else {
+            com.angelsoft.macmirror.util.PermissionUtils.openNotificationListenerSettings(context)
+        }
     }
 
     fun sendTestNotification(context: android.content.Context) {
         // Ensure the notification listener service is bound and active
-        com.angelsoft.macmirror.util.PermissionUtils.rebindNotificationListener(context)
+        if (!com.angelsoft.macmirror.service.NotificationListener.isServiceBound.value) {
+            com.angelsoft.macmirror.util.PermissionUtils.forceRebindNotificationListener(context)
+        } else {
+            com.angelsoft.macmirror.util.PermissionUtils.rebindNotificationListener(context)
+        }
         com.angelsoft.macmirror.service.NotificationListener.postTestNotification(context)
     }
 

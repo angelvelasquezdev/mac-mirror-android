@@ -69,6 +69,7 @@ fun MainScreen(
     val discoveredServerUrl by viewModel.discoveredServerUrl.collectAsState()
     val pairingState by viewModel.pairingState.collectAsState()
     val diagnosticState by viewModel.diagnosticState.collectAsState()
+    val listenerRebindAttempts by viewModel.listenerRebindAttempts.collectAsState()
 
     val postNotificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -628,6 +629,7 @@ fun MainScreen(
         ) {
             DiagnosticBottomSheetContent(
                 diagnosticState = diagnosticState,
+                listenerRebindAttempts = listenerRebindAttempts,
                 onRepeat = { viewModel.runDiagnosticTest(context) },
                 onClose = { viewModel.dismissDiagnostic() },
                 onFixPermissions = {
@@ -638,6 +640,9 @@ fun MainScreen(
                     } else if (android.os.Build.VERSION.SDK_INT >= 33) {
                         postNotificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
                     }
+                },
+                onReactivateService = {
+                    viewModel.handleServiceRunningAction(context)
                 }
             )
         }
@@ -647,9 +652,11 @@ fun MainScreen(
 @Composable
 fun DiagnosticBottomSheetContent(
     diagnosticState: MainViewModel.DiagnosticState,
+    listenerRebindAttempts: Int = 0,
     onRepeat: () -> Unit,
     onClose: () -> Unit,
-    onFixPermissions: () -> Unit
+    onFixPermissions: () -> Unit,
+    onReactivateService: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -758,6 +765,26 @@ fun DiagnosticBottomSheetContent(
                             ) {
                                 Text(
                                     text = stringResource(R.string.btn_retry),
+                                    color = AppleBlue,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+
+                        // Actionable button if background listener service error
+                        if (step.id == MainViewModel.DiagnosticStepId.SERVICE_RUNNING && step.status == MainViewModel.StepStatus.ERROR) {
+                            val actionText = if (listenerRebindAttempts == 0) {
+                                stringResource(R.string.diag_step2_action_reactivate)
+                            } else {
+                                stringResource(R.string.diag_step2_action_settings)
+                            }
+                            TextButton(
+                                onClick = onReactivateService,
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = actionText,
                                     color = AppleBlue,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp

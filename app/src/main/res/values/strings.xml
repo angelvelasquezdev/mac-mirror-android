@@ -133,6 +133,8 @@
     <string name="diag_step2_title">Background Listener Service</string>
     <string name="diag_step2_ok">NotificationListenerService bound and running</string>
     <string name="diag_step2_err">Listener service is not bound by Android</string>
+    <string name="diag_step2_action_reactivate">Reactivate</string>
+    <string name="diag_step2_action_settings">Settings</string>
     <string name="diag_step3_title">macOS Connectivity</string>
     <string name="diag_step3_ok">macOS server reachable and communication channel ready</string>
     <string name="diag_step3_err">macOS server is unreachable on local network</string>

@@ -54,6 +54,11 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        unitTests.all {
+            it.jvmArgs("-Xmx768m")
+        }
+    }
 }
 
 dependencies {

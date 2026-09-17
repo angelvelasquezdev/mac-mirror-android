@@ -133,6 +133,8 @@
     <string name="diag_step2_title">Servicio Listener en Segundo Plano</string>
     <string name="diag_step2_ok">NotificationListenerService vinculado y activo</string>
     <string name="diag_step2_err">El servicio no está vinculado por el sistema Android</string>
+    <string name="diag_step2_action_reactivate">Reactivar</string>
+    <string name="diag_step2_action_settings">Ajustes</string>
     <string name="diag_step3_title">Conectividad con macOS</string>
     <string name="diag_step3_ok">Servidor macOS alcanzable y canal de comunicación listo</string>
     <string name="diag_step3_err">El servidor macOS es inalcanzable en la red local</string>
