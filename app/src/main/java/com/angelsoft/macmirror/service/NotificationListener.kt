@@ -186,6 +186,7 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
             super.onLost(network)
             Log.w(TAG, "Wi-Fi network lost, pausing discovery until reconnect.")
             nsdHelper.stopDiscovery()
+            disconnectWebSocket()
         }
     }
 
