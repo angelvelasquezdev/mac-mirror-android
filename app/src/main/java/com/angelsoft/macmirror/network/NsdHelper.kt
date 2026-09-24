@@ -73,6 +73,18 @@ class NsdHelper(context: Context) {
         }
     }
 
+    /**
+     * Stops and restarts discovery, forcing a fresh mDNS session instead of relying on
+     * [startDiscovery]'s no-op guard. Needed after a network transition (e.g. Wi-Fi
+     * reconnect): the OS can silently tear down the underlying multicast session while our
+     * [discoveryListener] reference stays non-null, so a plain [startDiscovery] call would
+     * skip re-registering and leave discovery stuck on a dead session.
+     */
+    fun restartDiscovery() {
+        stopDiscovery()
+        startDiscovery()
+    }
+
     private fun resolveService(serviceInfo: NsdServiceInfo) {
         val resolveListener = object : NsdManager.ResolveListener {
             override fun onResolveFailed(serviceInfo: NsdServiceInfo?, errorCode: Int) {
