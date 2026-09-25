@@ -42,6 +42,9 @@ Built with **Jetpack Compose** following an **Apple HIG Inset-Grouped** design s
   - **Foreground Service & Silent Persistent Notification**: Optional background service using Android's modern `connectedDevice` foreground service type (`FOREGROUND_SERVICE_CONNECTED_DEVICE`) with a silent notification (`IMPORTANCE_LOW`). Keeps the process alive against aggressive OEM task killers (MIUI/HyperOS, One UI, ColorOS) and dynamically reflects connection status ("Connected to Mac" / "Standby").
   - **Auto-Protection for Low Latency**: Enabling Low Latency (WebSockets) automatically turns on the persistent service to ensure the socket stays connected 24/7.
 - 📱 **Per-App Filter Controls**: Selectively enable or disable notification mirroring per application with fast, asynchronous icon caching and real-time search.
+- 🧪 **Interactive E2E Diagnostics & Delivery ACK**: Built-in diagnostic card on the main screen to test notification listener status, local network resolution, and trigger test alerts with real-time delivery confirmation (ACK) and roundtrip latency measurement.
+- 🔄 **Seamless Wi-Fi Auto-Reconnection**: Active network callback monitoring that cleanly resets sockets on connection loss and automatically restarts NSD discovery and socket reconnection when Wi-Fi is restored.
+- 🤝 **Protocol Compatibility & Version Negotiation**: Forward and backward compatibility checks (`PROTOCOL_VERSION`) with in-app warning banners alerting users if the companion macOS app needs updating.
 - 🎨 **Apple HIG-Inspired Design**: Native Inset-Grouped card layout, custom iOS-style segmented navigation bar, smooth transitions, and high-contrast accessible typography (WCAG AA compliant).
 - 🔄 **Bidirectional Unpairing**: Unpairing from Android automatically resets the macOS server, and unpairing from macOS immediately notifies Android.
 - 🌐 **Full Internationalization (i18n)**: Out-of-the-box support for English and Spanish.
@@ -93,6 +96,20 @@ Built with **Jetpack Compose** following an **Apple HIG Inset-Grouped** design s
 
 ---
 
+## 📦 Installation & Download
+
+### Pre-built APKs (Recommended)
+Download the latest signed APK directly from GitHub Releases:
+
+- **Stable Channel (Recommended)**: [Latest Official Release](https://github.com/angelvelasquezdev/mac-mirror-android/releases/latest)
+- **Beta Channel**: [Pre-release Builds](https://github.com/angelvelasquezdev/mac-mirror-android/releases)
+- **Develop Channel (Bleeding-edge)**: [Daily Rolling Dev Builds](https://github.com/angelvelasquezdev/mac-mirror-android/releases/tag/dev)
+
+> [!NOTE]
+> If installing via web browser, ensure "Install unknown apps" permission is granted in Android Settings for your browser or file manager.
+
+---
+
 ## 🚀 Getting Started & Building
 
 ### 1. Clone the Repository
@@ -125,7 +142,7 @@ You can open the project in **Android Studio** or build from the command line:
 - [ ] 💬 Inline quick replies and remote actions execution ([#8](https://github.com/angelvelasquezdev/mac-mirror-android/issues/8)).
 - [ ] 📋 Secure local clipboard synchronization ([#9](https://github.com/angelvelasquezdev/mac-mirror-android/issues/9)).
 - [ ] 🎵 Stream active media playback metadata & remote control commands ([#10](https://github.com/angelvelasquezdev/mac-mirror-android/issues/10)).
-- [ ] 🔄 Auto-reconnect on Wi-Fi network change ([#11](https://github.com/angelvelasquezdev/mac-mirror-android/issues/11)).
+- [x] 🔄 Auto-reconnect on Wi-Fi network change ([#11](https://github.com/angelvelasquezdev/mac-mirror-android/issues/11)) *(Shipped in v1.0.1)*.
 - [ ] 🖥️ Multi-Mac pairing management ([#12](https://github.com/angelvelasquezdev/mac-mirror-android/issues/12)).
 - [ ] 🌐 Expand localizations (French, German, Portuguese, Italian, Japanese) ([#5](https://github.com/angelvelasquezdev/mac-mirror-android/issues/5)).
 
@@ -137,6 +154,7 @@ Contributions are warmly welcome! Whether you are fixing bugs, proposing new fea
 
 1. Check open issues tagged with [`good first issue`](https://github.com/angelvelasquezdev/mac-mirror-android/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) and [`help wanted`](https://github.com/angelvelasquezdev/mac-mirror-android/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22).
 2. Read the [Contributing Guide](CONTRIBUTING.md) for local setup, code style, and submission workflows.
+3. Check the [Codemagic Setup Guide](CODEMAGIC_SETUP_GUIDE.md) for details on automated CI/CD builds, release signing, and deployment pipelines.
 
 ---
 
