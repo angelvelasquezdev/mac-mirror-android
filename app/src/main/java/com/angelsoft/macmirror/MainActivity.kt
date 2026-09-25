@@ -5,8 +5,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.*
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -50,52 +52,66 @@ class MainActivity : ComponentActivity() {
             val scope = rememberCoroutineScope()
 
             MacMirrorTheme(themeMode = themeMode) {
-                if (!hasCompletedOnboarding || showOnboardingManual) {
-                    OnboardingScreen(
-                        onFinish = {
-                            scope.launch {
-                                preferencesManager.setHasCompletedOnboarding(true)
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    if (!hasCompletedOnboarding || showOnboardingManual) {
+                        OnboardingScreen(
+                            onFinish = {
+                                scope.launch {
+                                    preferencesManager.setHasCompletedOnboarding(true)
+                                }
+                                showOnboardingManual = false
                             }
-                            showOnboardingManual = false
-                        }
-                    )
-                } else {
-                    var selectedTab by remember { mutableIntStateOf(0) }
-
-                    val bottomBarContent: @Composable () -> Unit = {
-                        IosTabBar(
-                            selectedTab = selectedTab,
-                            onTabSelected = { selectedTab = it }
                         )
-                    }
+                    } else {
+                        var selectedTab by remember { mutableIntStateOf(0) }
 
-                    AnimatedContent(
-                        targetState = selectedTab,
-                        transitionSpec = {
-                            if (targetState > initialState) {
-                                (slideInHorizontally(animationSpec = tween(280)) { width -> (width * 0.35).toInt() } + fadeIn(animationSpec = tween(280)))
-                                    .togetherWith(slideOutHorizontally(animationSpec = tween(280)) { width -> (-width * 0.35).toInt() } + fadeOut(animationSpec = tween(280)))
-                            } else {
-                                (slideInHorizontally(animationSpec = tween(280)) { width -> (-width * 0.35).toInt() } + fadeIn(animationSpec = tween(280)))
-                                    .togetherWith(slideOutHorizontally(animationSpec = tween(280)) { width -> (width * 0.35).toInt() } + fadeOut(animationSpec = tween(280)))
+                        Scaffold(
+                            modifier = Modifier.fillMaxSize(),
+                            containerColor = MaterialTheme.colorScheme.background,
+                            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                            bottomBar = {
+                                IosTabBar(
+                                    selectedTab = selectedTab,
+                                    onTabSelected = { selectedTab = it }
+                                )
                             }
-                        },
-                        label = "ScreenTransition"
-                    ) { targetTab ->
-                        when (targetTab) {
-                            0 -> MainScreen(
-                                modifier = Modifier.fillMaxSize(),
-                                bottomBar = bottomBarContent
-                            )
-                            1 -> AppsScreen(
-                                modifier = Modifier.fillMaxSize(),
-                                bottomBar = bottomBarContent
-                            )
-                            else -> SettingsScreen(
-                                modifier = Modifier.fillMaxSize(),
-                                bottomBar = bottomBarContent,
-                                onShowOnboarding = { showOnboardingManual = true }
-                            )
+                        ) { innerPadding ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(bottom = innerPadding.calculateBottomPadding())
+                                    .consumeWindowInsets(WindowInsets.navigationBars)
+                                    .background(MaterialTheme.colorScheme.background)
+                            ) {
+                                AnimatedContent(
+                                    targetState = selectedTab,
+                                    transitionSpec = {
+                                        val animationSpec = tween<Float>(durationMillis = 250, easing = FastOutSlowInEasing)
+                                        val slideSpec = tween<IntOffset>(durationMillis = 250, easing = FastOutSlowInEasing)
+                                        if (targetState > initialState) {
+                                            (slideInHorizontally(animationSpec = slideSpec) { width -> (width * 0.35f).toInt() } + fadeIn(animationSpec = animationSpec))
+                                                .togetherWith(slideOutHorizontally(animationSpec = slideSpec) { width -> (-width * 0.35f).toInt() } + fadeOut(animationSpec = animationSpec))
+                                        } else {
+                                            (slideInHorizontally(animationSpec = slideSpec) { width -> (-width * 0.35f).toInt() } + fadeIn(animationSpec = animationSpec))
+                                                .togetherWith(slideOutHorizontally(animationSpec = slideSpec) { width -> (width * 0.35f).toInt() } + fadeOut(animationSpec = animationSpec))
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxSize(),
+                                    label = "ScreenTransition"
+                                ) { targetTab ->
+                                    when (targetTab) {
+                                        0 -> MainScreen(modifier = Modifier.fillMaxSize())
+                                        1 -> AppsScreen(modifier = Modifier.fillMaxSize())
+                                        else -> SettingsScreen(
+                                            modifier = Modifier.fillMaxSize(),
+                                            onShowOnboarding = { showOnboardingManual = true }
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
