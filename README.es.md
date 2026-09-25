@@ -42,6 +42,9 @@ Desarrollada con **Jetpack Compose** siguiendo una guía de diseño **Apple HIG 
   - **Servicio en Primer Plano y Notificación Persistente Silenciosa**: Servicio opcional mediante el tipo moderno `connectedDevice` (`FOREGROUND_SERVICE_CONNECTED_DEVICE`) con notificación silenciosa (`IMPORTANCE_LOW`). Previene el cierre del proceso ante asesinos de tareas agresivos de fabricantes (MIUI/HyperOS, One UI, ColorOS) y muestra el estado en tiempo real ("Conectado a Mac" / "En espera").
   - **Auto-Protección para Baja Latencia**: Al activar el modo de Baja Latencia (WebSockets), se enciende automáticamente el servicio en segundo plano para garantizar la estabilidad del socket 24/7.
 - 📱 **Control y Filtro por Aplicación**: Elige exactamente qué aplicaciones tienen permitido reflejar notificaciones, con caché asíncrona de íconos y búsqueda reactiva instantánea.
+- 🧪 **Diagnóstico Interactivo E2E y Confirmación de Entrega (ACK)**: Herramienta de diagnóstico integrada en la pantalla principal para verificar el estado del listener, resolución de red y emitir alertas de prueba con confirmación de entrega (ACK) y latencia en tiempo real.
+- 🔄 **Reconexión Automática por Wi-Fi**: Monitorización activa de red que resetea la conexión limpiamente ante pérdidas de señal y reinicia automáticamente el descubrimiento Bonjour y la reconexión con el Mac al recuperar el Wi-Fi.
+- 🤝 **Negociación de Protocolo y Compatibilidad**: Control de versiones de protocolo (`PROTOCOL_VERSION`) con banners de alerta en la app si la app de macOS compañera requiere actualización.
 - 🎨 **Diseño Inspirado en Apple HIG**: Tarjetas agrupadas (Inset-Grouped), barra de navegación inferior segmentada estilo iOS, soporte completo de temas Claro y Oscuro, y contrastes accesibles conformes a WCAG AA.
 - 🔄 **Desvinculación Bidireccional**: Si te desvinculas en Android, la app de macOS se desvincula automáticamente al instante, y viceversa.
 - 🌐 **Internacionalización Completa (i18n)**: Soporte nativo para Español e Inglés.
@@ -94,7 +97,21 @@ Desarrollada con **Jetpack Compose** siguiendo una guía de diseño **Apple HIG 
 
 ---
 
-## 🚀 Compilación e Instalación
+## 📦 Descarga e Instalación
+
+### APKs Precompilados (Recomendado)
+Descarga el último APK firmado directamente desde GitHub Releases:
+
+- **Canal Estable (Recomendado)**: [Última Versión Oficial](https://github.com/angelvelasquezdev/mac-mirror-android/releases/latest)
+- **Canal Beta**: [Versiones Previas / Beta](https://github.com/angelvelasquezdev/mac-mirror-android/releases)
+- **Canal Develop (Bleeding-edge)**: [Compilaciones Dev Diarias](https://github.com/angelvelasquezdev/mac-mirror-android/releases/tag/dev)
+
+> [!NOTE]
+> Si descargas el APK desde el navegador de tu móvil, asegúrate de conceder el permiso de "Instalar aplicaciones desconocidas" en los Ajustes de Android para tu navegador o gestor de archivos.
+
+---
+
+## 🚀 Compilación desde el Código Fuente
 
 ### 1. Clonar el Repositorio
 ```bash
@@ -126,7 +143,7 @@ Puedes abrir la carpeta del proyecto en **Android Studio** o ejecutar en la term
 - [ ] 💬 Respuestas rápidas y ejecución remota de acciones de notificaciones ([#8](https://github.com/angelvelasquezdev/mac-mirror-android/issues/8)).
 - [ ] 📋 Sincronización segura del portapapeles local ([#9](https://github.com/angelvelasquezdev/mac-mirror-android/issues/9)).
 - [ ] 🎵 Transmisión de metadatos multimedia y controles de reproducción remotos ([#10](https://github.com/angelvelasquezdev/mac-mirror-android/issues/10)).
-- [ ] 🔄 Reconexión automática al cambiar de red Wi-Fi ([#11](https://github.com/angelvelasquezdev/mac-mirror-android/issues/11)).
+- [x] 🔄 Reconexión automática al cambiar de red Wi-Fi ([#11](https://github.com/angelvelasquezdev/mac-mirror-android/issues/11)) *(Lanzado en v1.0.1)*.
 - [ ] 🖥️ Soporte para emparejar con múltiples Macs ([#12](https://github.com/angelvelasquezdev/mac-mirror-android/issues/12)).
 - [ ] 🌐 Nuevas traducciones (Francés, Alemán, Portugués, Italiano, Japonés) ([#5](https://github.com/angelvelasquezdev/mac-mirror-android/issues/5)).
 
@@ -138,6 +155,7 @@ Puedes abrir la carpeta del proyecto en **Android Studio** o ejecutar en la term
 
 1. Revisa las issues abiertas etiquetadas con [`good first issue`](https://github.com/angelvelasquezdev/mac-mirror-android/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) y [`help wanted`](https://github.com/angelvelasquezdev/mac-mirror-android/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22).
 2. Consulta la [Guía de Contribución](CONTRIBUTING.es.md) para conocer el entorno de desarrollo, estilo de código y flujo de Pull Requests.
+3. Consulta la [Guía de Configuración de Codemagic](CODEMAGIC_SETUP_GUIDE.es.md) para detalles sobre automatización de CI/CD, firmado de releases y flujos de despliegue.
 
 ---
 
