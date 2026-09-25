@@ -137,7 +137,7 @@ Puedes abrir la carpeta del proyecto en **Android Studio** o ejecutar en la term
 ¡Las contribuciones son muy bienvenidas! Ya sea reportando errores, sugiriendo mejoras o traduciendo la app:
 
 1. Revisa las issues abiertas etiquetadas con [`good first issue`](https://github.com/angelvelasquezdev/mac-mirror-android/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) y [`help wanted`](https://github.com/angelvelasquezdev/mac-mirror-android/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22).
-2. Consulta la [Guía de Contribución](CONTRIBUTING.md) para conocer el entorno de desarrollo, estilo de código y flujo de Pull Requests.
+2. Consulta la [Guía de Contribución](CONTRIBUTING.es.md) para conocer el entorno de desarrollo, estilo de código y flujo de Pull Requests.
 
 ---
 
