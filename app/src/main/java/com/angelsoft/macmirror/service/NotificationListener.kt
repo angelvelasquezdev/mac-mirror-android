@@ -8,6 +8,10 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.os.Build
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
@@ -146,10 +150,51 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
 
     private val pendingAcks = ConcurrentHashMap<String, CompletableDeferred<Boolean>>()
 
+    private val connectivityManager: ConnectivityManager? by lazy {
+        getSystemService(ConnectivityManager::class.java)
+    }
+
+    // Restarts NSD discovery (and nudges a WebSocket reconnect) whenever a Wi-Fi network
+    // becomes available, e.g. leaving and returning to a paired network. Registering also
+    // delivers an immediate onAvailable() for a Wi-Fi network that's already connected, so
+    // this is the single place discovery gets (re)started, cold start included.
+    private val wifiNetworkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            super.onAvailable(network)
+            Log.i(TAG, "Wi-Fi network available, refreshing discovery and connection state.")
+            serviceScope.launch {
+                val isPaired = preferencesManager.isPairedFlow.first()
+                if (!isPaired) return@launch
+
+                try {
+                    nsdHelper.restartDiscovery()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to restart NSD discovery after Wi-Fi reconnect", e)
+                }
+
+                // Also try the last known server URL immediately, rather than waiting for
+                // NSD to re-resolve a fresh one first.
+                val lowLatency = preferencesManager.lowLatencyModeFlow.first()
+                val url = preferencesManager.serverUrlFlow.first()
+                if (lowLatency && url != null && !isWebSocketConnected) {
+                    connectWebSocket(getWebSocketUrl(url))
+                }
+            }
+        }
+
+        override fun onLost(network: Network) {
+            super.onLost(network)
+            Log.w(TAG, "Wi-Fi network lost, pausing discovery until reconnect.")
+            nsdHelper.stopDiscovery()
+            disconnectWebSocket()
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "NotificationListener service created.")
         createNotificationChannel()
+        registerWifiNetworkCallback()
 
         // Start watching persistent service preferences and pairing state
         serviceScope.launch {
@@ -166,13 +211,10 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
             }
         }
 
-        // Background NSD discovery to continuously keep server URL fresh
+        // Persist any newly-discovered server URL from NSD while paired. Discovery itself is
+        // (re)started by wifiNetworkCallback above, not unconditionally here, so it also
+        // recovers cleanly after a Wi-Fi drop instead of only ever running once at cold start.
         serviceScope.launch {
-            try {
-                nsdHelper.startDiscovery()
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to start NSD discovery in NotificationListener", e)
-            }
             combine(preferencesManager.isPairedFlow, nsdHelper.resolvedServerUrl) { paired, discoveredUrl ->
                 if (paired && discoveredUrl != null) {
                     val saved = preferencesManager.serverUrlFlow.first()
@@ -207,9 +249,30 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
 
     override fun onDestroy() {
         super.onDestroy()
+        unregisterWifiNetworkCallback()
+        nsdHelper.stopDiscovery()
         disconnectWebSocket()
         updateForegroundService(false)
         serviceScope.cancel()
+    }
+
+    private fun registerWifiNetworkCallback() {
+        val request = NetworkRequest.Builder()
+            .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+            .build()
+        try {
+            connectivityManager?.registerNetworkCallback(request, wifiNetworkCallback)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to register Wi-Fi network callback", e)
+        }
+    }
+
+    private fun unregisterWifiNetworkCallback() {
+        try {
+            connectivityManager?.unregisterNetworkCallback(wifiNetworkCallback)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to unregister Wi-Fi network callback", e)
+        }
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
