@@ -8,6 +8,7 @@ workflows:
         - macmirror_signing_credentials
       groups:
         - google_play_credentials
+        - github_credentials
       vars:
         PACKAGE_NAME: "com.angelsoft.macmirror"
     cache:
@@ -29,6 +30,7 @@ workflows:
           - 'gradle.properties'
           - 'gradlew'
           - 'gradlew.bat'
+          - 'codemagic.yaml'
     scripts:
       - name: Set up local.properties
         script: |
@@ -38,7 +40,7 @@ workflows:
           cat <<EOF > "$CM_BUILD_DIR/local.properties"
           sdk.dir=$ANDROID_SDK_ROOT
           EOF
-      - name: Build AAB with Gradle
+      - name: Build AAB and APK with Gradle
         script: |
           set -e
           set -x
@@ -50,11 +52,40 @@ workflows:
             UPDATED_BUILD_NUMBER=$(($LATEST_GOOGLE_PLAY_BUILD_NUMBER + 1))
           fi
           
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          DATE_STR=$(date +%Y%m%d%H%M)
+          VERSION_NAME="dev.${DATE_STR}.${SHORT_SHA}"
+          
           ./gradlew :app:bundleRelease \
-            -PversionName="build.$UPDATED_BUILD_NUMBER" \
+            -PversionName="$VERSION_NAME" \
             -PversionCode=$UPDATED_BUILD_NUMBER
+
+          ./gradlew :app:assembleRelease \
+            -PversionName="$VERSION_NAME" \
+            -PversionCode=$UPDATED_BUILD_NUMBER
+      - name: Publish to GitHub Releases (Rolling Dev Release)
+        script: |
+          set -e
+          set -x
+          
+          export GH_TOKEN="$GITHUB_TOKEN"
+          COMMIT_SHA=$(git rev-parse HEAD)
+          APK_PATH="app/build/outputs/apk/release/MacMirror-dev.apk"
+          
+          cp app/build/outputs/apk/release/app-release.apk "$APK_PATH" || cp app/build/outputs/apk/release/*.apk "$APK_PATH"
+          
+          # Always delete the existing dev release and tag so it is recreated completely fresh
+          gh release delete dev --yes --cleanup-tag || true
+
+          gh release create dev \
+            --target "$COMMIT_SHA" \
+            --title "dev" \
+            --notes "Rolling pre-release build from develop branch" \
+            --prerelease \
+            "$APK_PATH"
     artifacts:
       - app/build/outputs/bundle/release/*.aab
+      - app/build/outputs/apk/release/*.apk
     publishing:
       google_play:
         credentials: $GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS
@@ -127,19 +158,17 @@ workflows:
           fi
           
           export GH_TOKEN="$GITHUB_TOKEN"
+          APK_PATH="app/build/outputs/apk/release/MacMirror-$CM_TAG.apk"
+          cp app/build/outputs/apk/release/app-release.apk "$APK_PATH" || cp app/build/outputs/apk/release/*.apk "$APK_PATH"
           
           if gh release view "$CM_TAG" >/dev/null 2>&1; then
-            gh release upload "$CM_TAG" \
-              app/build/outputs/bundle/release/*.aab \
-              app/build/outputs/apk/release/*.apk \
-              --clobber
+            gh release upload "$CM_TAG" "$APK_PATH" --clobber
           else
             gh release create "$CM_TAG" \
               --title "MacMirror Android $CM_TAG" \
               --generate-notes \
               --prerelease \
-              app/build/outputs/bundle/release/*.aab \
-              app/build/outputs/apk/release/*.apk
+              "$APK_PATH"
           fi
     artifacts:
       - app/build/outputs/bundle/release/*.aab
@@ -218,18 +247,16 @@ workflows:
           fi
           
           export GH_TOKEN="$GITHUB_TOKEN"
+          APK_PATH="app/build/outputs/apk/release/MacMirror-$CM_TAG.apk"
+          cp app/build/outputs/apk/release/app-release.apk "$APK_PATH" || cp app/build/outputs/apk/release/*.apk "$APK_PATH"
           
           if gh release view "$CM_TAG" >/dev/null 2>&1; then
-            gh release upload "$CM_TAG" \
-              app/build/outputs/bundle/release/*.aab \
-              app/build/outputs/apk/release/*.apk \
-              --clobber
+            gh release upload "$CM_TAG" "$APK_PATH" --clobber
           else
             gh release create "$CM_TAG" \
               --title "MacMirror Android $CM_TAG" \
               --generate-notes \
-              app/build/outputs/bundle/release/*.aab \
-              app/build/outputs/apk/release/*.apk
+              "$APK_PATH"
           fi
     artifacts:
       - app/build/outputs/bundle/release/*.aab
