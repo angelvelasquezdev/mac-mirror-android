@@ -91,6 +91,9 @@ class SettingsViewModel(
     val keepAlivePersistentService: StateFlow<Boolean> = preferencesManager.keepAlivePersistentServiceFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val autoStartOnBoot: StateFlow<Boolean> = preferencesManager.autoStartOnBootFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     private val _isBatteryOptimizationIgnored = MutableStateFlow(com.angelsoft.macmirror.util.PermissionUtils.isBatteryOptimizationIgnored(context))
     val isBatteryOptimizationIgnored: StateFlow<Boolean> = _isBatteryOptimizationIgnored
 
@@ -132,6 +135,12 @@ class SettingsViewModel(
     fun toggleKeepAlivePersistentService(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.setKeepAlivePersistentService(enabled)
+        }
+    }
+
+    fun toggleAutoStartOnBoot(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.setAutoStartOnBoot(enabled)
         }
     }
 

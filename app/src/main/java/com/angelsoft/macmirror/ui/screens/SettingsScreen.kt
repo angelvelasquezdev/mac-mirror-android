@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -35,6 +36,7 @@ import com.angelsoft.macmirror.ui.components.CupertinoRow
 import com.angelsoft.macmirror.ui.components.CupertinoSection
 import com.angelsoft.macmirror.ui.components.CupertinoSegmentedControl
 import com.angelsoft.macmirror.ui.components.CupertinoSwitch
+import com.angelsoft.macmirror.ui.theme.AppleAmber
 import com.angelsoft.macmirror.ui.theme.AppleBlue
 import com.angelsoft.macmirror.ui.theme.AppleGreen
 import com.angelsoft.macmirror.ui.theme.AppleIndigo
@@ -52,6 +54,7 @@ fun SettingsScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val lowLatencyMode by viewModel.lowLatencyMode.collectAsState()
     val keepAlivePersistentService by viewModel.keepAlivePersistentService.collectAsState()
+    val autoStartOnBoot by viewModel.autoStartOnBoot.collectAsState()
     val isBatteryOptimizationIgnored by viewModel.isBatteryOptimizationIgnored.collectAsState()
     val themeMode by viewModel.themeMode.collectAsState()
     val scrollState = rememberScrollState()
@@ -203,6 +206,27 @@ fun SettingsScreen(
                                 } else {
                                     viewModel.toggleKeepAlivePersistentService(false)
                                 }
+                            }
+                        )
+                    }
+                )
+
+                // Fila: Iniciar al reiniciar el dispositivo
+                CupertinoRow(
+                    title = stringResource(R.string.row_auto_start_title),
+                    subtitle = if (autoStartOnBoot) {
+                        stringResource(R.string.row_auto_start_active)
+                    } else {
+                        stringResource(R.string.row_auto_start_inactive)
+                    },
+                    icon = Icons.Default.PlayArrow,
+                    iconColor = AppleAmber,
+                    showDivider = true,
+                    trailingContent = {
+                        CupertinoSwitch(
+                            checked = autoStartOnBoot,
+                            onCheckedChange = { enable ->
+                                viewModel.toggleAutoStartOnBoot(enable)
                             }
                         )
                     }

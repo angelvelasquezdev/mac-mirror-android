@@ -21,6 +21,7 @@ class PreferencesManager(private val context: Context) {
         private val THEME_MODE = intPreferencesKey("theme_mode")
         private val COMPLETED_ONBOARDING = booleanPreferencesKey("completed_onboarding")
         private val KEEP_ALIVE_PERSISTENT_SERVICE = booleanPreferencesKey("keep_alive_persistent_service")
+        private val AUTO_START_ON_BOOT = booleanPreferencesKey("auto_start_on_boot")
     }
 
     val hasCompletedOnboardingFlow: Flow<Boolean> = context.dataStore.data.map { prefs ->
@@ -59,9 +60,19 @@ class PreferencesManager(private val context: Context) {
         prefs[KEEP_ALIVE_PERSISTENT_SERVICE] ?: false
     }
 
+    val autoStartOnBootFlow: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[AUTO_START_ON_BOOT] ?: false
+    }
+
     suspend fun setKeepAlivePersistentService(enabled: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[KEEP_ALIVE_PERSISTENT_SERVICE] = enabled
+        }
+    }
+
+    suspend fun setAutoStartOnBoot(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[AUTO_START_ON_BOOT] = enabled
         }
     }
 
@@ -83,6 +94,7 @@ class PreferencesManager(private val context: Context) {
             prefs[SERVER_URL] = serverUrl
             prefs[ENCRYPTED_SHARED_KEY] = encryptedKeyBase64
             prefs[IS_PAIRED] = true
+            prefs[AUTO_START_ON_BOOT] = true
         }
     }
 
@@ -98,6 +110,7 @@ class PreferencesManager(private val context: Context) {
             prefs.remove(SERVER_URL)
             prefs.remove(ENCRYPTED_SHARED_KEY)
             prefs[IS_PAIRED] = false
+            prefs[AUTO_START_ON_BOOT] = false
         }
     }
 

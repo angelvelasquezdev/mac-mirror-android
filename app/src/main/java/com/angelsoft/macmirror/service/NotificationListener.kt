@@ -247,6 +247,15 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
         }
     }
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d(TAG, "NotificationListener onStartCommand called.")
+        serviceScope.launch {
+            val keepAlive = preferencesManager.keepAlivePersistentServiceFlow.first()
+            updateForegroundService(keepAlive)
+        }
+        return START_STICKY
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         unregisterWifiNetworkCallback()

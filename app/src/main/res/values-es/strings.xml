@@ -116,6 +116,9 @@
     <string name="row_keep_alive_title">Servicio en Segundo Plano</string>
     <string name="row_keep_alive_active">Notificación persistente activa (Alta prioridad)</string>
     <string name="row_keep_alive_inactive">Prioridad estándar del sistema</string>
+    <string name="row_auto_start_title">Iniciar al reiniciar el dispositivo</string>
+    <string name="row_auto_start_active">Inicia automáticamente al reiniciar el teléfono</string>
+    <string name="row_auto_start_inactive">Inicia solo al abrir la aplicación</string>
 
     <!-- Battery Optimization -->
     <string name="battery_optimization_card_title">Actividad en segundo plano restringida</string>

@@ -116,6 +116,9 @@
     <string name="row_keep_alive_title">Background Service</string>
     <string name="row_keep_alive_active">Persistent notification active (High priority)</string>
     <string name="row_keep_alive_inactive">Standard system priority</string>
+    <string name="row_auto_start_title">Start on Device Boot</string>
+    <string name="row_auto_start_active">Starts automatically when phone restarts</string>
+    <string name="row_auto_start_inactive">Starts only when app is opened</string>
 
     <!-- Battery Optimization -->
     <string name="battery_optimization_card_title">Background Activity Restricted</string>
