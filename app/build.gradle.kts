@@ -12,7 +12,7 @@ android {
     }
 
     val vCode = project.findProperty("versionCode")?.toString()?.toIntOrNull() ?: 1
-    val vName = project.findProperty("versionName")?.toString() ?: "1.1.0"
+    val vName = project.findProperty("versionName")?.toString() ?: "1.2.0"
 
     defaultConfig {
         applicationId = "com.angelsoft.macmirror"

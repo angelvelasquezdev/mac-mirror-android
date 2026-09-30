@@ -57,9 +57,9 @@ class MainActivity : ComponentActivity() {
 
             val currentVersion = remember {
                 try {
-                    packageManager.getPackageInfo(packageName, 0).versionName ?: "1.1.0"
+                    packageManager.getPackageInfo(packageName, 0).versionName ?: "1.2.0"
                 } catch (e: Exception) {
-                    "1.1.0"
+                    "1.2.0"
                 }
             }
             var showWhatsNew by remember { mutableStateOf(false) }

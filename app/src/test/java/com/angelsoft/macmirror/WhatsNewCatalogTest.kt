@@ -8,19 +8,20 @@ class WhatsNewCatalogTest {
 
     @Test
     fun testCatalogHasHighlightsForSupportedVersions() {
-        assertTrue(WhatsNewCatalog.hasHighlights("1.1"))
-        assertTrue(WhatsNewCatalog.hasHighlights("1.1.0"))
-        assertTrue(WhatsNewCatalog.hasHighlights("1.1-beta.1"))
+        assertTrue(WhatsNewCatalog.hasHighlights("1.2"))
+        assertTrue(WhatsNewCatalog.hasHighlights("1.2.0"))
+        assertTrue(WhatsNewCatalog.hasHighlights("1.2-beta.1"))
 
         assertFalse(WhatsNewCatalog.hasHighlights("1.0.0"))
+        assertFalse(WhatsNewCatalog.hasHighlights("1.1.0"))
         assertFalse(WhatsNewCatalog.hasHighlights("2.0.0"))
     }
 
     @Test
     fun testCatalogHighlightsContent() {
-        val release = WhatsNewCatalog.highlights("1.1.0")
+        val release = WhatsNewCatalog.highlights("1.2.0")
         assertNotNull(release)
-        assertEquals("1.1", release?.version)
+        assertEquals("1.2", release?.version)
         assertFalse(release!!.items.isEmpty())
 
         for (item in release.items) {
@@ -35,7 +36,7 @@ class WhatsNewCatalogTest {
     fun testLatestRelease() {
         val latest = WhatsNewCatalog.latestRelease()
         assertNotNull(latest)
-        assertEquals("1.1", latest.version)
+        assertEquals("1.2", latest.version)
         assertFalse(latest.items.isEmpty())
     }
 }

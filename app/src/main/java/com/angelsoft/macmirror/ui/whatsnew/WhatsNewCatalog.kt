@@ -29,7 +29,7 @@ object WhatsNewCatalog {
 
     val releases = listOf(
         WhatsNewRelease(
-            version = "1.1",
+            version = "1.2",
             items = listOf(
                 WhatsNewFeatureItem(
                     id = "autostart",
