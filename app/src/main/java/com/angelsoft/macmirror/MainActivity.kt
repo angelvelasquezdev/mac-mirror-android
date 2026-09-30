@@ -28,12 +28,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.angelsoft.macmirror.data.PreferencesManager
+import com.angelsoft.macmirror.ui.components.WhatsNewBottomSheet
 import com.angelsoft.macmirror.ui.screens.AppsScreen
 import com.angelsoft.macmirror.ui.screens.MainScreen
 import com.angelsoft.macmirror.ui.screens.OnboardingScreen
 import com.angelsoft.macmirror.ui.screens.SettingsScreen
 import com.angelsoft.macmirror.ui.theme.AppleBlue
 import com.angelsoft.macmirror.ui.theme.MacMirrorTheme
+import com.angelsoft.macmirror.ui.whatsnew.WhatsNewCatalog
+import com.angelsoft.macmirror.ui.whatsnew.WhatsNewRelease
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 
@@ -51,6 +55,40 @@ class MainActivity : ComponentActivity() {
             var showOnboardingManual by remember { mutableStateOf(false) }
             val scope = rememberCoroutineScope()
 
+            val currentVersion = remember {
+                try {
+                    packageManager.getPackageInfo(packageName, 0).versionName ?: "1.1.0"
+                } catch (e: Exception) {
+                    "1.1.0"
+                }
+            }
+            var showWhatsNew by remember { mutableStateOf(false) }
+            var whatsNewReleaseToShow by remember { mutableStateOf<WhatsNewRelease?>(null) }
+
+            LaunchedEffect(Unit) {
+                val lastSeen = preferencesManager.lastSeenVersionFlow.first()
+                val onboardingCompleted = preferencesManager.hasCompletedOnboardingFlow.first()
+                val isPaired = preferencesManager.isPairedFlow.first()
+                val isExistingUser = onboardingCompleted || isPaired
+
+                if (lastSeen == null) {
+                    if (isExistingUser && WhatsNewCatalog.hasHighlights(currentVersion)) {
+                        whatsNewReleaseToShow = WhatsNewCatalog.highlights(currentVersion)
+                        showWhatsNew = true
+                    } else {
+                        // Fresh install: save version silently
+                        preferencesManager.setLastSeenVersion(currentVersion)
+                    }
+                } else if (lastSeen != currentVersion) {
+                    if (WhatsNewCatalog.hasHighlights(currentVersion)) {
+                        whatsNewReleaseToShow = WhatsNewCatalog.highlights(currentVersion)
+                        showWhatsNew = true
+                    } else {
+                        preferencesManager.setLastSeenVersion(currentVersion)
+                    }
+                }
+            }
+
             MacMirrorTheme(themeMode = themeMode) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -61,6 +99,7 @@ class MainActivity : ComponentActivity() {
                             onFinish = {
                                 scope.launch {
                                     preferencesManager.setHasCompletedOnboarding(true)
+                                    preferencesManager.setLastSeenVersion(currentVersion)
                                 }
                                 showOnboardingManual = false
                             }
@@ -107,12 +146,29 @@ class MainActivity : ComponentActivity() {
                                         1 -> AppsScreen(modifier = Modifier.fillMaxSize())
                                         else -> SettingsScreen(
                                             modifier = Modifier.fillMaxSize(),
-                                            onShowOnboarding = { showOnboardingManual = true }
+                                            onShowOnboarding = { showOnboardingManual = true },
+                                            onShowWhatsNew = {
+                                                whatsNewReleaseToShow = WhatsNewCatalog.highlights(currentVersion)
+                                                    ?: WhatsNewCatalog.latestRelease()
+                                                showWhatsNew = true
+                                            }
                                         )
                                     }
                                 }
                             }
                         }
+                    }
+
+                    if (showWhatsNew && whatsNewReleaseToShow != null) {
+                        WhatsNewBottomSheet(
+                            release = whatsNewReleaseToShow!!,
+                            onDismiss = {
+                                scope.launch {
+                                    preferencesManager.setLastSeenVersion(currentVersion)
+                                }
+                                showWhatsNew = false
+                            }
+                        )
                     }
                 }
             }

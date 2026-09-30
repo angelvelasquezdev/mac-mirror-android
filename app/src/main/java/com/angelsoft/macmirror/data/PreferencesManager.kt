@@ -22,6 +22,7 @@ class PreferencesManager(private val context: Context) {
         private val COMPLETED_ONBOARDING = booleanPreferencesKey("completed_onboarding")
         private val KEEP_ALIVE_PERSISTENT_SERVICE = booleanPreferencesKey("keep_alive_persistent_service")
         private val AUTO_START_ON_BOOT = booleanPreferencesKey("auto_start_on_boot")
+        private val LAST_SEEN_VERSION_FOR_WHATS_NEW = stringPreferencesKey("last_seen_version_for_whats_new")
     }
 
     val hasCompletedOnboardingFlow: Flow<Boolean> = context.dataStore.data.map { prefs ->
@@ -129,6 +130,16 @@ class PreferencesManager(private val context: Context) {
     suspend fun setHasCompletedOnboarding(completed: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[COMPLETED_ONBOARDING] = completed
+        }
+    }
+
+    val lastSeenVersionFlow: Flow<String?> = context.dataStore.data.map { prefs ->
+        prefs[LAST_SEEN_VERSION_FOR_WHATS_NEW]
+    }
+
+    suspend fun setLastSeenVersion(version: String) {
+        context.dataStore.edit { prefs ->
+            prefs[LAST_SEEN_VERSION_FOR_WHATS_NEW] = version
         }
     }
 }

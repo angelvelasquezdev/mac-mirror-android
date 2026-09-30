@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -48,6 +49,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     bottomBar: @Composable () -> Unit = {},
     onShowOnboarding: (() -> Unit)? = null,
+    onShowWhatsNew: (() -> Unit)? = null,
     viewModel: SettingsViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
@@ -297,6 +299,16 @@ fun SettingsScreen(
                         iconColor = AppleBlue,
                         showDivider = true,
                         onClick = onShowOnboarding
+                    )
+                }
+                if (onShowWhatsNew != null) {
+                    CupertinoRow(
+                        title = stringResource(R.string.row_whats_new_title),
+                        subtitle = stringResource(R.string.row_whats_new_subtitle),
+                        icon = Icons.Default.Star,
+                        iconColor = AppleAmber,
+                        showDivider = true,
+                        onClick = onShowWhatsNew
                     )
                 }
                 CupertinoRow(

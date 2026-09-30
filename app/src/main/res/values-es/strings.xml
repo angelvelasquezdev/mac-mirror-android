@@ -167,4 +167,17 @@
     <string name="compat_action_update">Actualizar app de Mac</string>
     <string name="compat_notification_title">MacMirror: Actualización requerida en Mac</string>
     <string name="compat_notification_text">La Mac vinculada requiere actualizar MacMirror para mantener la compatibilidad.</string>
+
+    <!-- Novedades de esta versión -->
+    <string name="row_whats_new_title">Novedades de la versión</string>
+    <string name="row_whats_new_subtitle">Consulta las últimas mejoras y funciones añadidas</string>
+    <string name="whats_new_title">Novedades en MacMirror</string>
+    <string name="whats_new_version_badge">Versión %s</string>
+    <string name="whats_new_continue">Continuar</string>
+    <string name="whats_new_autostart_title">Iniciar al reiniciar el dispositivo</string>
+    <string name="whats_new_autostart_desc">MacMirror ahora inicia automáticamente la sincronización en segundo plano al reiniciar el teléfono.</string>
+    <string name="whats_new_low_latency_title">Baja latencia con WebSockets</string>
+    <string name="whats_new_low_latency_desc">Disfruta de sincronización de notificaciones instantánea en tiempo real con WebSockets.</string>
+    <string name="whats_new_e2ee_title">Cifrado de extremo a extremo</string>
+    <string name="whats_new_e2ee_desc">Todas las alertas se cifran con AES-256-GCM y claves efímeras ECDH en hardware seguro.</string>
 </resources>
