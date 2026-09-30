@@ -116,6 +116,9 @@
     <string name="row_keep_alive_title">Background Service</string>
     <string name="row_keep_alive_active">Persistent notification active (High priority)</string>
     <string name="row_keep_alive_inactive">Standard system priority</string>
+    <string name="row_auto_start_title">Start on Device Boot</string>
+    <string name="row_auto_start_active">Starts automatically when phone restarts</string>
+    <string name="row_auto_start_inactive">Starts only when app is opened</string>
 
     <!-- Battery Optimization -->
     <string name="battery_optimization_card_title">Background Activity Restricted</string>
@@ -164,4 +167,17 @@
     <string name="compat_action_update">Update Mac App</string>
     <string name="compat_notification_title">MacMirror: macOS Update Required</string>
     <string name="compat_notification_text">The paired Mac requires a MacMirror update to remain compatible.</string>
+
+    <!-- What's New in this Version -->
+    <string name="row_whats_new_title">What\'s New in this Version</string>
+    <string name="row_whats_new_subtitle">See the latest improvements and features</string>
+    <string name="whats_new_title">What\'s New in MacMirror</string>
+    <string name="whats_new_version_badge">Version %s</string>
+    <string name="whats_new_continue">Continue</string>
+    <string name="whats_new_autostart_title">Start on Device Boot</string>
+    <string name="whats_new_autostart_desc">MacMirror now automatically begins background synchronization when your phone restarts.</string>
+    <string name="whats_new_low_latency_title">Low-Latency WebSockets</string>
+    <string name="whats_new_low_latency_desc">Enjoy instant notification mirroring with persistent real-time streaming.</string>
+    <string name="whats_new_e2ee_title">End-to-End Encryption</string>
+    <string name="whats_new_e2ee_desc">All notification payloads are protected using AES-256-GCM and ephemeral ECDH keys.</string>
 </resources>
