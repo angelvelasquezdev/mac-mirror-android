@@ -1,6 +1,8 @@
 package com.angelsoft.macmirror.di
 
 import com.angelsoft.macmirror.data.PreferencesManager
+import com.angelsoft.macmirror.network.LiveNetworkMonitor
+import com.angelsoft.macmirror.network.NetworkMonitor
 import com.angelsoft.macmirror.network.NsdHelper
 import com.angelsoft.macmirror.security.CryptoManager
 import com.angelsoft.macmirror.ui.MainViewModel
@@ -13,6 +15,7 @@ val appModule = module {
     single { CryptoManager(androidContext()) }
     single { PreferencesManager(androidContext()) }
     single { NsdHelper(androidContext()) }
-    viewModel { MainViewModel(get(), get(), get(), androidContext()) }
+    single<NetworkMonitor> { LiveNetworkMonitor(androidContext()) }
+    viewModel { MainViewModel(get(), get(), get(), androidContext(), get()) }
     viewModel { SettingsViewModel(androidContext(), get()) }
 }

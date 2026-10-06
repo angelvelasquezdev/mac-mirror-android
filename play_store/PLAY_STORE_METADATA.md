@@ -62,6 +62,9 @@ You decide what reaches your desktop. Enable or disable mirroring on a per-appli
 ULTRA-LOW LATENCY WITH WEBSOCKETS
 Built with persistent, lightweight WebSockets for sub-second notification delivery. When battery saving is prioritized, MacMirror seamlessly adapts to efficient HTTP mode.
 
+SMART WI-FI AWARENESS & DIAGNOSTICS
+Never guess connection status. MacMirror instantly detects when Wi-Fi is turned off and displays quick-action shortcuts to reconnect your network, alongside an interactive 8-step delivery diagnostic pipeline.
+
 ELEGANT NATIVE DESIGN
 Crafted with Jetpack Compose following Apple Human Interface Guidelines (HIG) Inset-Grouped cards and Material You accents. Enjoy fluid transitions, high contrast, and full Dark Mode support.
 
@@ -119,6 +122,9 @@ Tú decides qué alertas llegan a tu pantalla. Controla el filtrado individualme
 
 BAJA LATENCIA CON WEBSOCKETS
 Diseñado con un canal persistente de WebSockets para una entrega de notificaciones en menos de un segundo. También incluye modo de ahorro de batería inteligente por HTTP.
+
+DETECCIÓN INTELIGENTE DE WI-FI Y DIAGNÓSTICO
+Olvídate de buscar por qué no llegan tus alertas. MacMirror detecta de inmediato si tu Wi-Fi se apaga y te ofrece acceso rápido en un toque para reconectar, junto con un circuito interactivo de diagnóstico de 8 pasos.
 
 DISEÑO NATIVO ELEGANTE
 Creado con Jetpack Compose siguiendo las guías de diseño de Apple HIG (tarjetas Inset-Grouped) y Material You. Totalmente adaptado para Modo Claro y Modo Oscuro con contrastes óptimos.

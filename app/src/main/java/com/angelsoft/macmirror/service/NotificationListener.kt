@@ -147,6 +147,8 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
     private var currentPairedDeviceName: String? = null
     @Volatile
     private var currentIsPaired = false
+    @Volatile
+    private var isWifiConnected = true
 
     private val pendingAcks = ConcurrentHashMap<String, CompletableDeferred<Boolean>>()
 
@@ -162,6 +164,8 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
         override fun onAvailable(network: Network) {
             super.onAvailable(network)
             Log.i(TAG, "Wi-Fi network available, refreshing discovery and connection state.")
+            isWifiConnected = true
+            updatePersistentNotification()
             serviceScope.launch {
                 val isPaired = preferencesManager.isPairedFlow.first()
                 if (!isPaired) return@launch
@@ -185,14 +189,17 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
         override fun onLost(network: Network) {
             super.onLost(network)
             Log.w(TAG, "Wi-Fi network lost, pausing discovery until reconnect.")
+            isWifiConnected = false
             nsdHelper.stopDiscovery()
             disconnectWebSocket()
+            updatePersistentNotification()
         }
     }
 
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "NotificationListener service created.")
+        isWifiConnected = com.angelsoft.macmirror.util.PermissionUtils.isWifiConnected(this)
         createNotificationChannel()
         registerWifiNetworkCallback()
 
@@ -604,6 +611,8 @@ class NotificationListener : NotificationListenerService(), KoinComponent {
 
         val contentText = if (isConnected && !pairedDeviceName.isNullOrBlank()) {
             getString(R.string.persistent_notification_connected, pairedDeviceName)
+        } else if (currentIsPaired && !isWifiConnected) {
+            getString(R.string.persistent_notification_wifi_disconnected)
         } else if (currentIsPaired && !pairedDeviceName.isNullOrBlank()) {
             getString(R.string.persistent_notification_searching, pairedDeviceName)
         } else if (currentIsPaired) {

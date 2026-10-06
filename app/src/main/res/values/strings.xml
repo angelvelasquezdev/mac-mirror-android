@@ -158,8 +158,20 @@
     <string name="diag_status_testing">Running diagnostic pipeline…</string>
     <string name="diag_status_passed">Everything is working! Your connection is healthy.</string>
     <string name="diag_status_failed">Diagnostic failed. See details below.</string>
+    <string name="diag_step_wifi_title">Wi-Fi Network</string>
+    <string name="diag_step_wifi_ok">Connected to local Wi-Fi network</string>
+    <string name="diag_step_wifi_err">Device is not connected to a Wi-Fi network</string>
+    <string name="diag_step_wifi_action">Settings</string>
     <string name="persistent_notification_unpaired">MacMirror active • Waiting for pairing</string>
     <string name="persistent_notification_searching">MacMirror active • Searching for %s…</string>
+    <string name="persistent_notification_wifi_disconnected">Wi-Fi disconnected • Waiting for Wi-Fi connection</string>
+
+    <!-- Wi-Fi Disconnection Alert -->
+    <string name="wifi_warning_title">Wi-Fi Disconnected</string>
+    <string name="wifi_warning_desc">MacMirror requires a local Wi-Fi connection to mirror notifications to your Mac.</string>
+    <string name="wifi_action_settings">Connect to Wi-Fi</string>
+    <string name="status_wifi_disconnected">Wi-Fi Disconnected</string>
+    <string name="status_waiting_for_wifi">Waiting for Wi-Fi connection…</string>
 
     <!-- Compatibility & Backwards Compatibility -->
     <string name="compat_warning_title">Companion Update Required</string>
@@ -180,4 +192,6 @@
     <string name="whats_new_low_latency_desc">Enjoy instant notification mirroring with persistent real-time streaming.</string>
     <string name="whats_new_e2ee_title">End-to-End Encryption</string>
     <string name="whats_new_e2ee_desc">All notification payloads are protected using AES-256-GCM and ephemeral ECDH keys.</string>
+    <string name="whats_new_wifi_awareness_title">Smart Wi-Fi Awareness</string>
+    <string name="whats_new_wifi_awareness_desc">Instantly alerts you when Wi-Fi is disconnected with one-tap shortcuts to restore mirroring.</string>
 </resources>

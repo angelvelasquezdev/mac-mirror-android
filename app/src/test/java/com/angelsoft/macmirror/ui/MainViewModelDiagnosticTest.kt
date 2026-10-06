@@ -38,6 +38,8 @@ class MainViewModelDiagnosticTest {
         every { PermissionUtils.forceRebindNotificationListener(any()) } just Runs
         every { PermissionUtils.rebindNotificationListener(any()) } just Runs
         every { PermissionUtils.openNotificationListenerSettings(any()) } just Runs
+        every { PermissionUtils.isWifiConnected(any()) } returns true
+        every { PermissionUtils.openWifiSettings(any()) } just Runs
 
         mockkStatic(ContextCompat::class)
         every { ContextCompat.checkSelfPermission(any(), any()) } returns android.content.pm.PackageManager.PERMISSION_GRANTED
@@ -132,6 +134,44 @@ class MainViewModelDiagnosticTest {
             // Attempt 2: should directly open notification listener settings
             viewModel.handleServiceRunningAction(context)
             verify(exactly = 1) { PermissionUtils.openNotificationListenerSettings(context) }
+        } finally {
+            viewModel.cancelCoroutinesForTesting()
+        }
+    }
+
+    @Test
+    fun testStep3SuccessWhenWifiConnected() = runTest(testDispatcher) {
+        try {
+            NotificationListener.setServiceBoundForTesting(true)
+            every { PermissionUtils.isWifiConnected(any()) } returns true
+
+            viewModel.runDiagnosticTest(context)
+            advanceTimeBy(600)
+
+            val state = viewModel.diagnosticState.value
+            val stepWifi = state.steps.first { it.id == MainViewModel.DiagnosticStepId.WIFI_CONNECTION }
+            assertEquals(MainViewModel.StepStatus.SUCCESS, stepWifi.status)
+            assertEquals(R.string.diag_step_wifi_ok, stepWifi.detailResId)
+        } finally {
+            viewModel.cancelCoroutinesForTesting()
+        }
+    }
+
+    @Test
+    fun testStep3FailureWhenWifiDisconnected() = runTest(testDispatcher) {
+        try {
+            NotificationListener.setServiceBoundForTesting(true)
+            every { PermissionUtils.isWifiConnected(any()) } returns false
+
+            viewModel.runDiagnosticTest(context)
+            advanceTimeBy(600)
+
+            val state = viewModel.diagnosticState.value
+            val stepWifi = state.steps.first { it.id == MainViewModel.DiagnosticStepId.WIFI_CONNECTION }
+            assertEquals(MainViewModel.StepStatus.ERROR, stepWifi.status)
+            assertEquals(R.string.diag_step_wifi_err, stepWifi.detailResId)
+            assertTrue(state.hasError)
+            assertFalse(state.isRunning)
         } finally {
             viewModel.cancelCoroutinesForTesting()
         }

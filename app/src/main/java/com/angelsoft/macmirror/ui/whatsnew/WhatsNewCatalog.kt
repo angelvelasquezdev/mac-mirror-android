@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.angelsoft.macmirror.R
@@ -51,6 +52,13 @@ object WhatsNewCatalog {
                     iconColor = AppleGreen,
                     titleRes = R.string.whats_new_e2ee_title,
                     descRes = R.string.whats_new_e2ee_desc
+                ),
+                WhatsNewFeatureItem(
+                    id = "wifi_awareness",
+                    icon = Icons.Default.Warning,
+                    iconColor = AppleAmber,
+                    titleRes = R.string.whats_new_wifi_awareness_title,
+                    descRes = R.string.whats_new_wifi_awareness_desc
                 )
             )
         )
