@@ -173,4 +173,45 @@ object PermissionUtils {
             android.util.Log.e("PermissionUtils", "Failed to open notification listener settings", e)
         }
     }
+
+    /**
+     * Checks if the device is currently connected to a Wi-Fi or Ethernet local network.
+     */
+    fun isWifiConnected(context: Context): Boolean {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager ?: return false
+        val activeNetwork = cm.activeNetwork ?: return false
+        val capabilities = cm.getNetworkCapabilities(activeNetwork) ?: return false
+        return capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) ||
+                capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)
+    }
+
+    /**
+     * Opens the native Android internet connectivity panel (API 29+) or Wi-Fi settings.
+     */
+    fun openWifiSettings(context: Context) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            try {
+                val panelIntent = android.content.Intent(android.provider.Settings.Panel.ACTION_INTERNET_CONNECTIVITY).apply {
+                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(panelIntent)
+                return
+            } catch (e: Exception) {
+                // Fallback for OEMs where panel is not supported
+            }
+        }
+        try {
+            val wifiIntent = android.content.Intent(android.provider.Settings.ACTION_WIFI_SETTINGS).apply {
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(wifiIntent)
+        } catch (e: Exception) {
+            try {
+                val genericIntent = android.content.Intent(android.provider.Settings.ACTION_WIRELESS_SETTINGS).apply {
+                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(genericIntent)
+            } catch (ignored: Exception) {}
+        }
+    }
 }

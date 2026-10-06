@@ -38,7 +38,8 @@ class MainViewModel(
     private val preferencesManager: PreferencesManager,
     private val cryptoManager: CryptoManager,
     val nsdHelper: NsdHelper,
-    private val context: Context? = null
+    private val context: Context? = null,
+    val networkMonitor: com.angelsoft.macmirror.network.NetworkMonitor? = null
 ) : ViewModel() {
 
     companion object {
@@ -58,6 +59,9 @@ class MainViewModel(
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     val discoveredServerUrl: StateFlow<String?> = nsdHelper.resolvedServerUrl
+
+    val isWifiConnected: StateFlow<Boolean> = networkMonitor?.isWifiConnected
+        ?: MutableStateFlow(true)
 
     private val _isServerReachable = MutableStateFlow(false)
 
@@ -96,8 +100,8 @@ class MainViewModel(
     init {
         nsdHelper.startDiscovery()
         viewModelScope.launch {
-            combine(isPaired, discoveredServerUrl, savedServerUrl) { paired, discovered, saved ->
-                if (paired) {
+            combine(isPaired, discoveredServerUrl, savedServerUrl, isWifiConnected) { paired, discovered, saved, wifiOk ->
+                if (paired && wifiOk) {
                     val targetUrl = discovered ?: saved
                     if (targetUrl != null) {
                         if (discovered != null && discovered != saved) {
@@ -113,12 +117,12 @@ class MainViewModel(
             }.collect {}
         }
 
-        // Periodic reachability heartbeat every 8 seconds when paired
+        // Periodic reachability heartbeat every 8 seconds when paired and on Wi-Fi
         viewModelScope.launch {
             while (isActive) {
                 kotlinx.coroutines.delay(8000)
                 val paired = preferencesManager.isPairedFlow.first()
-                if (paired) {
+                if (paired && isWifiConnected.value) {
                     val targetUrl = discoveredServerUrl.value ?: savedServerUrl.value
                     if (targetUrl != null) {
                         checkServerStatus(targetUrl)
@@ -387,6 +391,7 @@ class MainViewModel(
     enum class DiagnosticStepId {
         PERMISSIONS,
         SERVICE_RUNNING,
+        WIFI_CONNECTION,
         MACOS_REACHABILITY,
         LOCAL_NOTIFICATION,
         LISTENER_INTERCEPT,
@@ -428,6 +433,7 @@ class MainViewModel(
             val initialSteps = listOf(
                 DiagnosticStep(DiagnosticStepId.PERMISSIONS, com.angelsoft.macmirror.R.string.diag_step1_title),
                 DiagnosticStep(DiagnosticStepId.SERVICE_RUNNING, com.angelsoft.macmirror.R.string.diag_step2_title),
+                DiagnosticStep(DiagnosticStepId.WIFI_CONNECTION, com.angelsoft.macmirror.R.string.diag_step_wifi_title),
                 DiagnosticStep(DiagnosticStepId.MACOS_REACHABILITY, com.angelsoft.macmirror.R.string.diag_step3_title),
                 DiagnosticStep(DiagnosticStepId.LOCAL_NOTIFICATION, com.angelsoft.macmirror.R.string.diag_step4_title),
                 DiagnosticStep(DiagnosticStepId.LISTENER_INTERCEPT, com.angelsoft.macmirror.R.string.diag_step5_title),
@@ -516,7 +522,22 @@ class MainViewModel(
             _listenerRebindAttempts.value = 0
             updateStep(DiagnosticStepId.SERVICE_RUNNING, StepStatus.SUCCESS, com.angelsoft.macmirror.R.string.diag_step2_ok)
 
-            // Step 3: macOS Reachability
+            // Step 3: Wi-Fi Connection
+            updateStep(DiagnosticStepId.WIFI_CONNECTION, StepStatus.RUNNING)
+            kotlinx.coroutines.delay(200)
+            val wifiOk = networkMonitor?.isWifiConnectedSync() ?: com.angelsoft.macmirror.util.PermissionUtils.isWifiConnected(context)
+            if (!wifiOk) {
+                updateStep(
+                    DiagnosticStepId.WIFI_CONNECTION,
+                    StepStatus.ERROR,
+                    com.angelsoft.macmirror.R.string.diag_step_wifi_err
+                )
+                _diagnosticState.value = _diagnosticState.value.copy(isRunning = false, hasError = true)
+                return@launch
+            }
+            updateStep(DiagnosticStepId.WIFI_CONNECTION, StepStatus.SUCCESS, com.angelsoft.macmirror.R.string.diag_step_wifi_ok)
+
+            // Step 4: macOS Reachability
             updateStep(DiagnosticStepId.MACOS_REACHABILITY, StepStatus.RUNNING)
             val paired = preferencesManager.isPairedFlow.first()
             if (!paired) {

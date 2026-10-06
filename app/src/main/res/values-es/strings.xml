@@ -158,8 +158,20 @@
     <string name="diag_status_testing">Ejecutando diagnóstico del circuito…</string>
     <string name="diag_status_passed">¡Todo funciona correctamente! Tu conexión está saludable.</string>
     <string name="diag_status_failed">El diagnóstico falló. Consulta los detalles abajo.</string>
+    <string name="diag_step_wifi_title">Red Wi-Fi</string>
+    <string name="diag_step_wifi_ok">Conectado a la red Wi-Fi local</string>
+    <string name="diag_step_wifi_err">El dispositivo no está conectado a Wi-Fi</string>
+    <string name="diag_step_wifi_action">Ajustes</string>
     <string name="persistent_notification_unpaired">MacMirror activo • Esperando vinculación</string>
     <string name="persistent_notification_searching">MacMirror activo • Buscando a %s…</string>
+    <string name="persistent_notification_wifi_disconnected">Wi-Fi desconectado • Esperando conexión Wi-Fi</string>
+
+    <!-- Alerta de desconexión Wi-Fi -->
+    <string name="wifi_warning_title">Wi-Fi Desconectado</string>
+    <string name="wifi_warning_desc">MacMirror requiere una conexión Wi-Fi local para sincronizar notificaciones con tu Mac.</string>
+    <string name="wifi_action_settings">Conectar Wi-Fi</string>
+    <string name="status_wifi_disconnected">Wi-Fi Desconectado</string>
+    <string name="status_waiting_for_wifi">Esperando conexión Wi-Fi…</string>
 
     <!-- Compatibilidad y Retrocompatibilidad -->
     <string name="compat_warning_title">Actualización requerida en Mac</string>
@@ -180,4 +192,6 @@
     <string name="whats_new_low_latency_desc">Disfruta de sincronización de notificaciones instantánea en tiempo real con WebSockets.</string>
     <string name="whats_new_e2ee_title">Cifrado de extremo a extremo</string>
     <string name="whats_new_e2ee_desc">Todas las alertas se cifran con AES-256-GCM y claves efímeras ECDH en hardware seguro.</string>
+    <string name="whats_new_wifi_awareness_title">Detección inteligente de Wi-Fi</string>
+    <string name="whats_new_wifi_awareness_desc">Te avisa al instante si el Wi-Fi se desconecta con acceso rápido para reactivar la sincronización.</string>
 </resources>

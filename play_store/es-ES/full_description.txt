@@ -27,6 +27,9 @@ Tú decides qué alertas llegan a tu pantalla. Controla el filtrado individualme
 BAJA LATENCIA CON WEBSOCKETS
 Diseñado con un canal persistente de WebSockets para una entrega de notificaciones en menos de un segundo. También incluye modo de ahorro de batería inteligente por HTTP.
 
+DETECCIÓN INTELIGENTE DE WI-FI Y DIAGNÓSTICO
+Olvídate de buscar por qué no llegan tus alertas. MacMirror detecta de inmediato si tu Wi-Fi se apaga y te ofrece acceso rápido en un toque para reconectar, junto con un circuito interactivo de diagnóstico de 8 pasos.
+
 DISEÑO NATIVO ELEGANTE
 Creado con Jetpack Compose siguiendo las guías de diseño de Apple HIG (tarjetas Inset-Grouped) y Material You. Totalmente adaptado para Modo Claro y Modo Oscuro con contrastes óptimos.
 

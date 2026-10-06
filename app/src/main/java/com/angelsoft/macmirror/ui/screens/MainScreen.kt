@@ -67,6 +67,7 @@ fun MainScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val isPaired by viewModel.isPaired.collectAsState()
     val isConnected by viewModel.isConnected.collectAsState()
+    val isWifiConnected by viewModel.isWifiConnected.collectAsState()
     val pairedDeviceName by viewModel.pairedDeviceName.collectAsState()
     val savedServerUrl by viewModel.savedServerUrl.collectAsState()
     val discoveredServerUrl by viewModel.discoveredServerUrl.collectAsState()
@@ -378,25 +379,91 @@ fun MainScreen(
                 }
             }
 
-            // 3. Main Connection Experience
+            // 3. Wi-Fi Disconnection Advisory Card (Auto-shows when paired and Wi-Fi is disconnected)
+            AnimatedVisibility(
+                visible = permissionGranted && isPaired && !isWifiConnected,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                CupertinoCard(cornerRadius = 20.dp) {
+                    Column(
+                        modifier = Modifier.padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(AppleAmber.copy(alpha = 0.15f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = AppleAmber,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.wifi_warning_title),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = stringResource(R.string.wifi_warning_desc),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    lineHeight = 18.sp
+                                )
+                            }
+                        }
+
+                        AppleButton(
+                            text = stringResource(R.string.wifi_action_settings),
+                            onClick = {
+                                com.angelsoft.macmirror.util.PermissionUtils.openWifiSettings(context)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            isPrimary = true
+                        )
+                    }
+                }
+            }
+
+            // 4. Main Connection Experience
             if (isPaired) {
                 // PAIRED STATE
                 CupertinoSection(
                     title = stringResource(R.string.active_connection_title),
                     caption = stringResource(R.string.active_connection_caption)
                 ) {
-                    val connectionStatusTitle = if (isConnected) {
-                        stringResource(R.string.status_connected_syncing)
-                    } else {
-                        stringResource(R.string.status_standby_reconnecting)
+                    val connectionStatusTitle = when {
+                        isConnected -> stringResource(R.string.status_connected_syncing)
+                        !isWifiConnected -> stringResource(R.string.status_wifi_disconnected)
+                        else -> stringResource(R.string.status_standby_reconnecting)
                     }
-                    val connectionSubtitle = if (isConnected) {
-                        stringResource(R.string.status_low_latency_active)
-                    } else {
-                        stringResource(R.string.status_verifying_server)
+                    val connectionSubtitle = when {
+                        isConnected -> stringResource(R.string.status_low_latency_active)
+                        !isWifiConnected -> stringResource(R.string.status_waiting_for_wifi)
+                        else -> stringResource(R.string.status_verifying_server)
                     }
-                    val connectionIcon = if (isConnected) Icons.Default.CheckCircle else Icons.Default.Refresh
-                    val connectionColor = if (isConnected) AppleGreen else Color(0xFFFF9500)
+                    val connectionIcon = when {
+                        isConnected -> Icons.Default.CheckCircle
+                        !isWifiConnected -> Icons.Default.Warning
+                        else -> Icons.Default.Refresh
+                    }
+                    val connectionColor = when {
+                        isConnected -> AppleGreen
+                        !isWifiConnected -> AppleAmber
+                        else -> Color(0xFFFF9500)
+                    }
 
                     CupertinoRow(
                         title = connectionStatusTitle,
@@ -710,6 +777,9 @@ fun MainScreen(
                 },
                 onReactivateService = {
                     viewModel.handleServiceRunningAction(context)
+                },
+                onOpenWifiSettings = {
+                    PermissionUtils.openWifiSettings(context)
                 }
             )
         }
@@ -723,7 +793,8 @@ fun DiagnosticBottomSheetContent(
     onRepeat: () -> Unit,
     onClose: () -> Unit,
     onFixPermissions: () -> Unit,
-    onReactivateService: () -> Unit = {}
+    onReactivateService: () -> Unit = {},
+    onOpenWifiSettings: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -852,6 +923,21 @@ fun DiagnosticBottomSheetContent(
                             ) {
                                 Text(
                                     text = actionText,
+                                    color = AppleBlue,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+
+                        // Actionable button if Wi-Fi error
+                        if (step.id == MainViewModel.DiagnosticStepId.WIFI_CONNECTION && step.status == MainViewModel.StepStatus.ERROR) {
+                            TextButton(
+                                onClick = onOpenWifiSettings,
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.diag_step_wifi_action),
                                     color = AppleBlue,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp
