@@ -165,7 +165,7 @@ workflows:
             gh release upload "$CM_TAG" "$APK_PATH" --clobber
           else
             gh release create "$CM_TAG" \
-              --title "MacMirror Android $CM_TAG" \
+              --title "$CM_TAG" \
               --generate-notes \
               --prerelease \
               "$APK_PATH"
@@ -254,7 +254,7 @@ workflows:
             gh release upload "$CM_TAG" "$APK_PATH" --clobber
           else
             gh release create "$CM_TAG" \
-              --title "MacMirror Android $CM_TAG" \
+              --title "$CM_TAG" \
               --generate-notes \
               "$APK_PATH"
           fi
